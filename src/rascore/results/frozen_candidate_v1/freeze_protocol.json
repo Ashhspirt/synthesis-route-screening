@@ -1,0 +1,50 @@
+{
+  "status": "method_locked_before_refit",
+  "date": "2026-10-03T21:19:39.951442+00:00",
+  "candidate": "count_standard",
+  "comparator": "binary_standard",
+  "selection": "Equal weight mean ensemble validation log loss over six development partitions; no internal-test ranking.",
+  "mean_validation_loss": {
+    "count_standard": 0.3462542925852168,
+    "count_regularized": 0.34768079483801223,
+    "binary_regularized": 0.3557459435085133,
+    "binary_standard": 0.35659607735532545
+  },
+  "ensemble_seeds": [
+    42,
+    43,
+    44
+  ],
+  "default_policy": "recall90",
+  "user_preference": "Prioritize fewer false negatives; accept more false positives.",
+  "secondary_policy": "balanced",
+  "calibration": "None; no temperature scaling fitted.",
+  "final_training_pool": "Same fixed 20000 development molecules; no expansion to full original training pool.",
+  "final_split": "GroupShuffleSplit n_splits=1 test_size=0.2 random_state=404 on existing scaffold column.",
+  "validation_caveat": "Refit validation drawn from previously used development pool; not an independent evaluation.",
+  "refit_policy": "Keep best validation-BCE checkpoint; no refit on validation after threshold selection.",
+  "training": {
+    "hidden": [
+      256,
+      128,
+      64
+    ],
+    "dropout": 0.2,
+    "weight_decay": 0.0,
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "max_epochs": 50,
+    "patience": 5,
+    "threads": 2
+  },
+  "fingerprint": "Morgan radius2 length1024 no chirality; log1p counts; comparator binary, same 5 standardized descriptors.",
+  "source_sha256": "d8cdefd923ab793a12ba41d51471440bbddc0aae5a81ef41e88546df4d1330b0",
+  "dependency_sha256": {
+    "improvement_experiments.py": "800004178480d9e626dde01df0e040c403b8fd93900c111d97b8e7c5d6ef602a",
+    "feature_ablation.py": "8f3ef21d3ebe20df0849918e1b0f71ceb57af3f21ad9026756a8c444d8eff09a",
+    "pilot.py": "b6dd495cec465273fb8453e90ca2090229f71122c386aaf4fb0e8a5bb72e5afb",
+    "experiment_20k.py": "8411d4b228381592bb7894ecd0ad6eed8f5d275103a0cf865e05a087662202bd"
+  },
+  "sample_sha256": "36e9534a037bf6371bff2e4a8343e9070f0e4bcac9834dff8695346c4ed7684b",
+  "official_test_used": false
+}

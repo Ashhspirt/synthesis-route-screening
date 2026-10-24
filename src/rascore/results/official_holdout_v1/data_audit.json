@@ -1,0 +1,19 @@
+{
+  "n": 19935,
+  "n_positive": 14994,
+  "n_negative": 4941,
+  "positive_fraction": 0.7521444695259594,
+  "invalid_smiles": 0,
+  "duplicate_canonical": 0,
+  "conflicting_labels": 0,
+  "development_canonical_overlap": 0,
+  "development_source_id_overlap": 0,
+  "discarded_rows": 0,
+  "n_unseen_scaffold": 14742,
+  "structure_q75": {
+    "MolWt": 452.9365000000001,
+    "RingCount": 4.0,
+    "HBD": 2.0,
+    "HBA": 6.0
+  }
+}

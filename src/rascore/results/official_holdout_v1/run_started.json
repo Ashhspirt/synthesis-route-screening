@@ -1,0 +1,17 @@
+{
+  "started_utc": "2026-10-04T02:25:55.045462+00:00",
+  "authorization": "User: 执行保留测试",
+  "runner_sha256": "3c54f6fb81ac7b0099879945f047c23004f50c9678aae7c7dde282067b7a7505",
+  "plan_sha256": "d8fc0ab061ffed76987323352c8cad0771565f3345a1d598597e52d9044de24b",
+  "manifest_sha256": "5f564deadec3f4d96b623a1bebf9e064ddade070eb8776128dd74a19e880e59c",
+  "archive_sha256": "f73b3028592ff95feeeb2f4e0285005d956976c810a3818fc399c20480979ef3",
+  "prior_exposure": "Quality/overlap audit and class counts only; no official-test performance scoring or model selection.",
+  "preflight_sha256": "48ea6143c6839db675ae505dfabdedb76d1d9ca513e6acfef5a1e91792b6e211",
+  "structure_q75": {
+    "MolWt": 452.9365000000001,
+    "RingCount": 4.0,
+    "HBD": 2.0,
+    "HBA": 6.0
+  },
+  "official_test_labels_loaded": false
+}

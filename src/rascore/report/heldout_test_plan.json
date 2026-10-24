@@ -1,0 +1,113 @@
+{
+  "version": "heldout-v1",
+  "status": "frozen_plan_not_executed",
+  "date": "2026-10-04",
+  "frozen_manifest_sha256": "5f564deadec3f4d96b623a1bebf9e064ddade070eb8776128dd74a19e880e59c",
+  "archive_sha256": "f73b3028592ff95feeeb2f4e0285005d956976c810a3818fc399c20480979ef3",
+  "archive_path_relative_to_workspace": "work/rascore-data/data.zip",
+  "test_member": "data/uspto_chembl_classification_test.csv",
+  "expected_raw_rows": 19935,
+  "prior_exposure": "Quality/overlap audit and class counts only; no official-test performance scoring or model selection.",
+  "candidate": "frozen_candidate_v1/count_standard, seeds 42,43,44; equal mean probability",
+  "comparator": "frozen_candidate_v1/binary_standard, same partition and seeds; equal mean probability",
+  "policies": {
+    "count_standard": {
+      "recall90": 0.5844208399454752,
+      "balanced": 0.7000000000000002
+    },
+    "binary_standard": {
+      "recall90": 0.6053687334060669,
+      "balanced": 0.7400000000000002
+    }
+  },
+  "default_policy": "recall90",
+  "classification": "positive iff ensemble p >= frozen threshold",
+  "primary_estimate": "Paired candidate-minus-comparator AUROC on all eligible official test molecules.",
+  "operating_metrics": [
+    "recall",
+    "FNR",
+    "FPR",
+    "precision",
+    "balanced_accuracy",
+    "accuracy",
+    "TP",
+    "TN",
+    "FP",
+    "FN"
+  ],
+  "probability_metrics": [
+    "AUROC",
+    "average_precision",
+    "Brier",
+    "log_loss"
+  ],
+  "reliability_plot": "10 fixed equal-width probability bins [0,.1,...,1], report n, mean p and observed positive fraction; no fitted calibration.",
+  "uncertainty": {
+    "method": "paired label-stratified molecule bootstrap",
+    "resamples": 2000,
+    "seed": 20261004,
+    "confidence": "two-sided 95% percentile",
+    "same_resample_for_both_models": true,
+    "metrics": [
+      "AUROC",
+      "AUROC difference",
+      "AP",
+      "Brier",
+      "log_loss",
+      "FNR",
+      "FPR",
+      "recall",
+      "precision"
+    ],
+    "interpretation": "Conditional on frozen checkpoints and observed class counts; not training uncertainty; within-scaffold dependence remains."
+  },
+  "secondary_scaffold_analysis": {
+    "definition": "Official test molecules whose canonical Murcko scaffold is absent from ALL 20000 development molecules; same empty scaffold convention.",
+    "guard": "Report n and class counts first; AUROC only if >=100 positives and >=100 negatives; no model fitting or threshold changes.",
+    "inference": "Descriptive subset, not independent external scaffold benchmark."
+  },
+  "structure_subgroups": {
+    "features": [
+      "MolWt",
+      "RingCount",
+      "HBD",
+      "HBA"
+    ],
+    "cutpoints": "Training-only q75 from frozen 16196 training molecules; high means > q75.",
+    "sparse_class_guard": 30,
+    "outputs": [
+      "n_positive",
+      "n_negative",
+      "FNR",
+      "FPR"
+    ],
+    "no_subgroup_tuning": true
+  },
+  "cost_sensitivity": {
+    "loss": "(FP + lambda*FN)/N with C_FP normalized to 1",
+    "lambda": [
+      0.25,
+      0.5,
+      1,
+      2,
+      5,
+      10
+    ],
+    "meaning": "Illustrative relative costs, not measured financial or clinical cost; no post-test policy selection."
+  },
+  "failure_policy": "Stop before scoring for hash/count/schema/invalid-SMILES/conflicting-label/overlap mismatch; do not silently drop or correct rows. Record incident and assess whether any test outputs were seen.",
+  "exposure_policy": "Write an immutable run-start marker before loading test labels; preserve outputs on failure. No rerun to improve scores. Any necessary code-bug rerun must disclose the first exposure and reason.",
+  "no_change_after_open": [
+    "sample membership",
+    "features",
+    "scaler",
+    "weights",
+    "ensemble weights",
+    "thresholds",
+    "calibration",
+    "primary outcome",
+    "bootstrap rule"
+  ],
+  "success_interpretation": "AUROC difference with lower 95% bound >0 supports better ranking for this frozen comparison; otherwise evidence is insufficient. Report recall/FPR tradeoff independently. Test recall <.90 must be reported without lowering threshold.",
+  "execution_status": "NOT RUN; user requested a plan, not test scoring."
+}

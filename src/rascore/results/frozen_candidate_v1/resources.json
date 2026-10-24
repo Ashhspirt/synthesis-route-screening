@@ -1,0 +1,11 @@
+{
+  "cpu_threads": 2,
+  "memory_total_gib": 15.692127227783203,
+  "process_peak_rss_mib_sampled": 979.8984375,
+  "sampling_seconds": 0.05,
+  "rss_includes_imports_and_feature_arrays": true,
+  "first_1000_development_featurization_seconds": 0.42422409998835064,
+  "training_seconds": 23.396652599985828,
+  "inference_excludes_features_disk_load": true,
+  "no_gpu": true
+}

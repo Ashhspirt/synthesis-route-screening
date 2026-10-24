@@ -1,0 +1,7 @@
+{
+  "validation_figures": "audit_demo(): first three saved validation rows and frozen count models",
+  "threshold_tradeoff": "results/official_holdout_v1/metrics.csv",
+  "structural_errors": "results/official_holdout_v1/structure_subgroups.csv",
+  "representation_comparison": "report/representation_comparison.png",
+  "new_official_test_inference": false
+}

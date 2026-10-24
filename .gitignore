@@ -1,0 +1,34 @@
+# Environments, downloaded raw archive and machine-local caches
+/work/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+.runtime/
+.matplotlib-cache/
+.cache/
+.pytest_cache/
+src/rascore/presentation/site/
+src/rascore/presentation/preview.png
+
+# Preserve only the published reference artifacts, not future experiment runs.
+/src/rascore/results/*
+!/src/rascore/results/frozen_candidate_v1/
+!/src/rascore/results/official_holdout_v1/
+!/src/rascore/results/experiment_20000_three_seeds/
+/src/rascore/results/experiment_20000_three_seeds/*
+!/src/rascore/results/experiment_20000_three_seeds/data/
+/src/rascore/results/experiment_20000_three_seeds/data/*
+!/src/rascore/results/experiment_20000_three_seeds/data/pilot_sample.csv
+!/src/rascore/results/experiment_20000_three_seeds/data/pilot_features.npz
+!/src/rascore/results/experiment_20000_three_seeds/data/data_audit.json

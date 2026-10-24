@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "models_reloaded": 6,
+  "best_epochs_checked": true,
+  "training_only_scaler_checked": true,
+  "scaffold_disjoint": true,
+  "validation_recall_at_least_90": true,
+  "thresholds_frozen": true,
+  "official_test_scored": false
+}

@@ -1,0 +1,47 @@
+{
+  "data_url": "https://raw.githubusercontent.com/reymond-group/RAscore/cb77db503ee5cbf0e8bb8963df6e5b76b3a94f06/data/data.zip",
+  "repository_commit": "cb77db503ee5cbf0e8bb8963df6e5b76b3a94f06",
+  "archive_sha256": "f73b3028592ff95feeeb2f4e0285005d956976c810a3818fc399c20480979ef3",
+  "archive_bytes": 5961134,
+  "columns": [
+    "source_id",
+    "smi",
+    "activity",
+    "dataset",
+    "source_split"
+  ],
+  "raw_rows": 199348,
+  "raw_class_counts": {
+    "test:label_0": 4941,
+    "test:label_1": 14994,
+    "train:label_0": 44471,
+    "train:label_1": 134942
+  },
+  "label_meaning": "Historical AiZynthFinder solved/unsolved; not wet-lab feasibility.",
+  "test_policy": "Official test audited for quality/overlap only; excluded from pilot training and performance evaluation.",
+  "canonicalization": "RDKit canonical isomeric SMILES, retaining salts and stereochemistry; no tautomer normalization.",
+  "rejected_rows": 0,
+  "conflicting_structures": 0,
+  "conflicting_rows": 0,
+  "train_duplicate_rows_after_conflict_removal": 3,
+  "test_duplicate_rows_after_conflict_removal": 0,
+  "official_split_overlapping_structures": 0,
+  "clean_training_pool_rows": 179410,
+  "clean_official_test_unique_rows": 19935,
+  "pilot_sample_rows": 20000,
+  "pilot_positive_fraction": 0.75215,
+  "pilot_unique_scaffolds": 16344,
+  "pilot_acyclic_rows": 152,
+  "empty_scaffold_policy": "All acyclic molecules form one group; never spread across scaffold splits.",
+  "fingerprint": {
+    "type": "Morgan binary",
+    "radius": 2,
+    "bits": 1024,
+    "includeChirality": false
+  },
+  "fingerprint_note": "Labels retain stereochemistry; chirality-blind features are an explicit pilot limitation.",
+  "fingerprint_and_scaffold_seconds": 6.237262700000429,
+  "audit_and_preparation_seconds": 42.37117430000217,
+  "seed": 42,
+  "rdkit_version": "2026.03.6"
+}

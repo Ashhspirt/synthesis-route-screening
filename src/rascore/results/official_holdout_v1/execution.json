@@ -1,0 +1,50 @@
+{
+  "status": "completed",
+  "started_utc": "2026-10-04T02:25:55.045462+00:00",
+  "completed_utc": "2026-10-04T02:26:49.298907+00:00",
+  "official_test_scored": true,
+  "scoring_executions": 1,
+  "refit_or_retuning": false,
+  "elapsed_seconds": 54.247999799990794,
+  "feature_and_six_model_inference_seconds": 4.145066700002644,
+  "cpu_threads": 2,
+  "primary": {
+    "metric": "paired_auroc_difference",
+    "estimate": 0.0036207291389874774,
+    "lower": 0.002316181819148658,
+    "upper": 0.0049468303141265045
+  },
+  "supports_positive_auroc_difference": true,
+  "bootstrap": {
+    "method": "paired label-stratified molecule bootstrap",
+    "resamples": 2000,
+    "seed": 20261004,
+    "confidence": "two-sided 95% percentile",
+    "same_resample_for_both_models": true,
+    "metrics": [
+      "AUROC",
+      "AUROC difference",
+      "AP",
+      "Brier",
+      "log_loss",
+      "FNR",
+      "FPR",
+      "recall",
+      "precision"
+    ],
+    "interpretation": "Conditional on frozen checkpoints and observed class counts; not training uncertainty; within-scaffold dependence remains."
+  },
+  "verification": "PASS: round-trip predictions, confusion totals and unchanged frozen artifacts",
+  "files_sha256": {
+    "bootstrap_replicates.csv": "7c64f950d52048537933c218ca5fecd887ab4663954439b4daa41a4296ee343a",
+    "confidence_intervals.csv": "ea2c8d264c318e276cc080ffa0a2a0cb327c34e3fa46b4434f66b9e38d4a6e85",
+    "cost_sensitivity.csv": "93a16631859ca8c49753083151a47ef1cd7e12de8bab4ee398d9f051dba69559",
+    "data_audit.json": "31d36fb4dd55a8eeebe8ec4d448b12e7d3d99b94abe789543407e1f88fec0e14",
+    "metrics.csv": "7afd05be270cb24da9206b3dbbbf4caa2fa3e62472832f2a4da31e64ada4f914",
+    "predictions.csv": "c9a32cf364cad42ed857de26cb7852426338ecb3533e009ce06c26321ba381aa",
+    "reliability.csv": "c6f82f6f19d2c6f86ddf6a783ef90dd63e3468fb3b10d844bf4c154014fa52f5",
+    "run_started.json": "4677ec995a9e16f14c54f4b96bdb09c7cb7f1ccf228f8c6b159002db79d27fb4",
+    "structure_subgroups.csv": "240e5b7dbf313c28a2c1d3b270c3d3948d8c80c20bed89da79236cb70ef08e53",
+    "unseen_scaffold.json": "153d90f0a59d25df597d92cda5180628994c5bdbb5d49f2fe8bb819bef6cf02e"
+  }
+}

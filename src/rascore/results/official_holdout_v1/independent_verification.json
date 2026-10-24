@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "utc": "2026-10-04T02:32:51.691831+00:00",
+  "checks": [
+    "all recorded artifact hashes",
+    "serialized equal-weight seed averages",
+    "sklearn confusion matrices and probability rankings",
+    "all 25 percentile intervals from 2000 saved resamples",
+    "paired AUROC differences",
+    "first bootstrap replicate reproduced with fixed seed",
+    "reliability and subgroup count conservation",
+    "unchanged frozen plan and model hashes"
+  ],
+  "used_saved_predictions_only": true,
+  "new_model_inference": false
+}
