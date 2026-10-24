@@ -127,7 +127,7 @@ Deploy the **`docs/` directory**. All viewer assets and trace data are prebuilt;
 
 ### GitHub Pages
 
-After pushing the repository, open **Settings → Pages → Build and deployment**. Choose **Deploy from a branch**, branch **main**, folder **/docs**, then save. Open the address shown by GitHub after its deployment finishes. The root page links to the lecture using relative paths, so repository subpaths are supported. See the [official GitHub Pages publishing guide](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+After pushing the repository, open **Settings → Pages → Build and deployment**. Choose **Deploy from a branch**, branch **main**, folder **/docs**, then save. Open the address shown by GitHub after its deployment finishes. The root page is a project landing page that links to the lecture at `lectrace/`. The published site is at <https://ashhspirt.github.io/synthesis-route-screening/>. See the [official GitHub Pages publishing guide](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
 ### Vercel
 
