@@ -1,2 +1,493 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=./lectrace/#/?trace=01_route_found&amp;step=1"><title>Synthesis route screening</title></head><body><p><a href="./lectrace/#/?trace=01_route_found&amp;step=1">Open the interactive synthesis-screening demonstration</a></p></body></html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>合成路线筛选</title>
+<meta name="description" content="在 CPU 上运行的小型神经网络集成：只看分子结构，预测 AiZynthFinder 历史上能否找到合成路线，用于在昂贵的路线搜索之前排定优先级。">
+<style>
+:root{
+  --bg:#f5f7f8;--paper:#ffffff;--ink:#1a2636;--muted:#5d6a78;--line:#dfe5ea;
+  --go:#1f6f8b;--go-soft:#dcebf1;--hold:#9aa6b2;--hold-soft:#e9edf1;--miss:#c26a2b;--miss-soft:#f7e6d8;
+  --serif:"Noto Serif SC","Source Han Serif SC","Songti SC","Iowan Old Style",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#11181f;--paper:#18212b;--ink:#e4eaf0;--muted:#9aa8b6;--line:#2a3643;
+  --go:#6bb3cf;--go-soft:#1c3644;--hold:#66788a;--hold-soft:#243140;--miss:#e39a5c;--miss-soft:#3a2a1c;}}
+:root[data-theme=dark]{--bg:#11181f;--paper:#18212b;--ink:#e4eaf0;--muted:#9aa8b6;--line:#2a3643;--go:#6bb3cf;--go-soft:#1c3644;--hold:#66788a;--hold-soft:#243140;--miss:#e39a5c;--miss-soft:#3a2a1c}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--go);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:3px solid var(--miss);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+p{margin:0 0 1em}
+code{font:0.9em var(--mono);background:var(--hold-soft);padding:1px 6px;border-radius:4px}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.brand{font:600 18px var(--serif);display:flex;align-items:center;gap:10px}
+.brand svg{flex:none}
+.top nav{display:flex;gap:22px;font-size:15px}
+.top nav a{color:var(--muted);text-decoration:none}
+.top nav a:hover{color:var(--ink)}
+
+.hero{padding:56px 0 8px}
+h1{font:600 clamp(30px,4.4vw,46px)/1.25 var(--serif);margin:0 0 18px;max-width:16em;letter-spacing:.01em}
+.lede{font-size:clamp(17px,2vw,19px);color:var(--muted);max-width:36em;margin-bottom:28px}
+.actions{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;padding:10px 20px;border-radius:8px;font-weight:600;text-decoration:none;font-size:15px;border:1.5px solid var(--go);transition:background .15s,color .15s}
+.btn.ghost:hover{background:var(--go-soft)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.primary{background:var(--go);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .btn.primary{color:#07201d}}
+.btn.ghost{color:var(--go)}
+
+.triage{margin:44px 0 80px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:28px 28px 24px;box-shadow:0 1px 2px rgba(20,40,60,.04)}
+.triage h2{font:600 22px/1.4 var(--serif);margin:0 0 6px}
+.triage .sub{color:var(--muted);font-size:15px;margin-bottom:26px;max-width:46em}
+.band{display:flex;height:72px;border-radius:8px;overflow:hidden;gap:3px}
+.band>div{position:relative;display:flex;align-items:flex-end;padding:8px 10px;font:600 14px/1.2 var(--sans);transform-origin:left;animation:grow .9s cubic-bezier(.2,.7,.2,1) both;min-width:0;overflow:hidden}
+.band .tp{background:var(--go);color:#fff;flex:13530}
+.band .fp{background:var(--go-soft);color:var(--go);flex:1612;animation-delay:.08s}
+.band .fn{background:var(--miss);color:#fff;flex:1464;animation-delay:.16s}
+.band .tn{background:var(--hold-soft);color:var(--muted);flex:3329;animation-delay:.24s}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .band .tp,:root:not([data-theme=light]) .band .fn{color:#0b1520}}
+@keyframes grow{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+.brace{display:flex;gap:3px;margin-top:10px;font-size:14px}
+.brace>div{border-top:2px solid;padding-top:8px}
+.brace .go{flex:15142;border-color:var(--go)}
+.brace .hold{flex:4793;border-color:var(--hold)}
+.brace b{font:600 24px/1.1 var(--serif);display:block}
+.brace span{color:var(--muted)}
+.key{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-size:13.5px;color:var(--muted)}
+.key i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:7px;vertical-align:-1px}
+
+section{margin-bottom:80px}
+h2.sec{font:600 clamp(22px,2.6vw,28px)/1.35 var(--serif);margin:0 0 10px;padding-left:14px;border-left:4px solid var(--go)}
+.intro{color:var(--muted);max-width:42em;margin-bottom:28px;font-size:16px}
+
+.explorer{display:grid;grid-template-columns:200px minmax(0,1fr);background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tabs{display:flex;flex-direction:column;border-right:1px solid var(--line)}
+.tabs button{all:unset;cursor:pointer;padding:18px 20px;border-bottom:1px solid var(--line);font-size:15px;position:relative}
+.tabs button:last-child{border-bottom:0}
+.tabs button small{display:block;color:var(--muted);font:12.5px var(--mono);margin-top:2px}
+.tabs button[aria-selected=true]{background:var(--bg)}
+.tabs button[aria-selected=true]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--go)}
+.tabs button:focus-visible{outline:3px solid var(--miss);outline-offset:-3px}
+.panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.struct{padding:20px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:12px;min-width:0}
+.struct .canvasbox{aspect-ratio:4/3;display:grid;place-items:center;background:var(--bg);border-radius:10px;overflow:hidden}
+.struct canvas{max-width:100%;height:auto}
+.struct .smiles{font:12.5px/1.5 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.reading{padding:24px 26px;min-width:0}
+.reading h3{margin:0 0 4px;font:600 15px var(--sans);color:var(--muted)}
+.mean{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.mean strong{font:600 46px/1 var(--serif)}
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13.5px;font-weight:600}
+.pill.go{background:var(--go-soft);color:var(--go)}
+.pill.hold{background:var(--hold-soft);color:var(--muted)}
+.seeds{display:flex;flex-direction:column;gap:9px;margin-bottom:22px}
+.seed{display:grid;grid-template-columns:64px 1fr 54px;align-items:center;gap:10px;font-size:13.5px}
+.seed .track{position:relative;height:12px;background:var(--hold-soft);border-radius:6px}
+.seed .fill{position:absolute;inset:0 auto 0 0;border-radius:6px;background:var(--hold);transition:width .45s cubic-bezier(.2,.7,.2,1)}
+.seed.avg .fill{background:var(--go)}
+.seed .thr{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed var(--miss)}
+.seed span:last-child{font-family:var(--mono);text-align:right}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;font-size:14px;border-top:1px solid var(--line);padding-top:16px;margin:0}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-weight:600}
+.note{font-size:14px;color:var(--muted);margin:16px 0 0}
+
+.steps{display:grid;grid-template-columns:repeat(4,1fr);counter-reset:s}
+.step{padding:0 22px 0 0;position:relative}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:2px solid var(--go);color:var(--go);font:600 15px var(--sans);margin-bottom:14px;background:var(--bg);position:relative;z-index:1}
+.step::after{content:"";position:absolute;top:17px;left:34px;right:0;border-top:2px solid var(--line)}
+.step:last-child::after{display:none}
+.step h3{font:600 17px var(--sans);margin:0 0 6px}
+.step p{font-size:14.5px;color:var(--muted);margin:0}
+.step code{font-size:12.5px}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.stat strong{font:600 32px/1.1 var(--serif);display:block;margin-bottom:6px;color:var(--go)}
+.stat span{font-size:14px;color:var(--muted)}
+.duo{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:22px 24px}
+.card h3{font:600 16px var(--sans);margin:0 0 4px}
+.card .cap{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:right;padding:9px 6px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:13px}
+td.win{color:var(--go);font-weight:600}
+tr:last-child td{border-bottom:0}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{font:11px var(--sans);fill:var(--muted)}
+
+.limits{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.fnr{display:flex;flex-direction:column;gap:14px}
+.fnr .row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;font-size:14px}
+.fnr .bars{display:flex;flex-direction:column;gap:4px}
+.fnr .b{height:14px;border-radius:3px;position:relative}
+.fnr .b.hi{background:var(--miss)}
+.fnr .b.lo{background:var(--hold)}
+.fnr .b em{position:absolute;left:calc(100% + 8px);top:-2px;font:12.5px var(--mono);font-style:normal;color:var(--ink);white-space:nowrap}
+.caveats p{padding-left:16px;border-left:3px solid var(--line)}
+
+pre{background:#16222e;color:#d9e6f2;padding:16px 20px;border-radius:10px;overflow-x:auto;font:14px/1.65 var(--mono);margin:0 0 14px}
+.runs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.runs h3{font:600 17px var(--sans);margin:0 0 8px}
+.runs p{font-size:14.5px;color:var(--muted)}
+
+footer{border-top:1px solid var(--line);padding:28px 0 56px;font-size:14px;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+@media (max-width:860px){
+  .explorer{grid-template-columns:1fr}
+  .tabs{flex-direction:row;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tabs button{border-bottom:0;border-right:1px solid var(--line);flex:1;min-width:120px}
+  .tabs button:last-child{border-right:0}
+  .tabs button[aria-selected=true]::before{top:auto;right:0;width:auto;height:4px}
+  .panel,.duo,.limits,.runs{grid-template-columns:1fr}
+  .struct{border-right:0;border-bottom:1px solid var(--line)}
+  .stats{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr 1fr;gap:28px 0}
+  .step:nth-child(2)::after{display:none}
+  .top nav a.opt{display:none}
+}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .steps{grid-template-columns:1fr}.step::after{display:none}
+  .band{height:56px}.band>div{font-size:0;padding:0}
+  .triage{padding:22px 18px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2l9.5 5.5v11L13 24l-9.5-5.5v-11z" fill="none" stroke="var(--go)" stroke-width="2"/><circle cx="13" cy="13" r="3.2" fill="var(--go)"/></svg>
+      合成路线筛选
+    </div>
+    <nav>
+      <a class="opt" href="#try">示例分子</a>
+      <a class="opt" href="#how">原理</a>
+      <a class="opt" href="#results">结果</a>
+      <a href="https://github.com/Ashhspirt/synthesis-route-screening">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>路线搜索很贵，先挑出最可能有结果的分子</h1>
+    <p class="lede">一个在 CPU 上运行的小型神经网络集成。只看分子结构，就能预测 AiZynthFinder 历史上是否为它找到了合成路线，让你把昂贵的路线搜索留给更有希望的候选。</p>
+    <div class="actions">
+      <a class="btn primary" href="https://ashhspirt.github.io/synthesis-route-screening/lectrace/#/?trace=01_route_found&amp;step=1">打开交互式讲解</a>
+      <a class="btn ghost" href="https://github.com/Ashhspirt/synthesis-route-screening">查看源码</a>
+    </div>
+  </div>
+
+  <div class="triage" role="figure" aria-labelledby="tri-h">
+    <h2 id="tri-h">在 19,935 个测试分子上，推迟约四分之一的搜索，仍保留九成有路线的分子</h2>
+    <p class="sub">按冻结阈值 0.5844 分流后的结果，条带宽度与分子数成正比。</p>
+    <div class="band" aria-hidden="true">
+      <div class="tp" title="优先，历史上找到路线：13,530">13,530</div>
+      <div class="fp" title="优先，历史上未找到：1,612">1,612</div>
+      <div class="fn" title="推迟，但历史上找到路线：1,464">1,464</div>
+      <div class="tn" title="推迟，历史上也未找到：3,329">3,329</div>
+    </div>
+    <div class="brace">
+      <div class="go"><b>15,142</b><span>优先搜索</span></div>
+      <div class="hold"><b>4,793</b><span>推迟</span></div>
+    </div>
+    <div class="key">
+      <span><i style="background:var(--go)"></i>优先，历史上找到路线 13,530</span>
+      <span><i style="background:var(--go-soft);outline:1px solid var(--go)"></i>优先，历史上未找到 1,612</span>
+      <span><i style="background:var(--miss)"></i>推迟，但历史上找到路线 1,464</span>
+      <span><i style="background:var(--hold-soft);outline:1px solid var(--hold)"></i>推迟，历史上也未找到 3,329</span>
+    </div>
+  </div>
+
+  <section id="try" aria-labelledby="try-h">
+    <h2 class="sec" id="try-h">看模型如何判断一个分子</h2>
+    <p class="intro">这三个分子是最终验证集保存预测的前三行，在查看分数之前就已选定。三个模型各自打分，取平均后与阈值比较。</p>
+    <div class="explorer">
+      <div class="tabs" role="tablist" aria-label="示例分子" id="tabs"></div>
+      <div class="panel" role="tabpanel" id="panel" tabindex="0">
+        <div class="struct">
+          <div class="canvasbox"><canvas id="mol" width="420" height="315" aria-label="当前示例分子的结构图"></canvas></div>
+          <div class="smiles" id="smiles"></div>
+        </div>
+        <div class="reading">
+          <h3>三个模型的平均分</h3>
+          <div class="mean"><strong id="meanv">–</strong><span class="pill" id="verdict"></span></div>
+          <div class="seeds" id="seeds"></div>
+          <dl class="facts">
+            <dt>来源编号</dt><dd id="sid"></dd>
+            <dt>历史结果</dt><dd id="hist"></dd>
+          </dl>
+          <p class="note">虚线是冻结阈值 0.5844。分数描述的是规划器的历史结果，不是可合成性的结论。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-h">
+    <h2 class="sec" id="how-h">从 SMILES 到筛选决定</h2>
+    <p class="intro">整个流程在两个 CPU 线程上完成，不需要 GPU。单次预测只需加载三个冻结模型。</p>
+    <div class="steps">
+      <div class="step"><h3>解析结构</h3><p>读入 SMILES，无效输入会明确报错，不会静默跳过。</p></div>
+      <div class="step"><h3>编码特征</h3><p>Morgan 计数指纹（半径 2，1,024 位）经 <code>log1p</code>，加上只用训练集缩放的 5 个描述符，共 1,029 维。</p></div>
+      <div class="step"><h3>三个网络打分</h3><p>隐层 256 → 128 → 64，ReLU，dropout 0.2。种子 42、43、44 各训练一个，按验证损失恢复最佳检查点。</p></div>
+      <div class="step"><h3>平均并决策</h3><p>三个 sigmoid 输出取平均，达到 0.5844 就标记为优先。阈值在验证集上选出，偏向少漏候选。</p></div>
+    </div>
+  </section>
+
+  <section id="results" aria-labelledby="res-h">
+    <h2 class="sec" id="res-h">保存下来的评估结果</h2>
+    <p class="intro">官方测试集有 19,935 个分子，其中 75.2% 历史上找到了路线。以下数字全部来自仓库中保存的评估输出，可用 <code>verify_release.py</code> 只读核验。</p>
+    <div class="stats">
+      <div class="stat"><strong>0.8888</strong><span>AUROC。比只记录有无的二值指纹高 0.00362，95% 区间 0.00232–0.00495。</span></div>
+      <div class="stat"><strong>90.24%</strong><span>召回导向阈值下保留的历史阳性比例。比二值版本少漏 160 个，多选 45 个。</span></div>
+      <div class="stat"><strong>0.8811</strong><span>只看骨架从未在训练中出现过的 14,742 个分子时的 AUROC，召回为 88.82%。</span></div>
+    </div>
+    <div class="duo">
+      <div class="card">
+        <h3>两种指纹在同一阈值策略下的对比</h3>
+        <p class="cap">召回导向策略，各自在验证集上选阈值。</p>
+        <table>
+          <thead><tr><th scope="col">指标</th><th scope="col">计数指纹</th><th scope="col">二值指纹</th></tr></thead>
+          <tbody>
+            <tr><td>AUROC</td><td class="win">0.8888</td><td>0.8852</td></tr>
+            <tr><td>平均精度</td><td class="win">0.9575</td><td>0.9557</td></tr>
+            <tr><td>Brier 分数（越低越好）</td><td class="win">0.1088</td><td>0.1102</td></tr>
+            <tr><td>召回</td><td class="win">90.24%</td><td>89.17%</td></tr>
+            <tr><td>漏掉的候选</td><td class="win">1,464</td><td>1,624</td></tr>
+            <tr><td>多选的候选</td><td>1,612</td><td class="win">1,567</td></tr>
+            <tr><td>阈值</td><td>0.5844</td><td>0.6054</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>分数基本可以当作概率来读</h3>
+        <p class="cap">按分数分成 10 组，比较平均分与实际找到路线的比例。点的大小代表分子数，越靠近对角线，校准越好。</p>
+        <svg class="chart" id="rel" viewBox="0 0 320 254" role="img" aria-label="校准曲线：计数集成在 10 个分数区间的平均预测与实际比例基本沿对角线分布"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="limits" aria-labelledby="lim-h">
+    <h2 class="sec" id="lim-h">使用前请了解它的盲区</h2>
+    <p class="intro">结构越复杂，模型越容易把有路线的分子推迟。下面是召回导向阈值下各结构子组的漏检率，即历史上找到路线却被推迟的比例。</p>
+    <div class="limits">
+      <div class="card">
+        <h3>漏检率：复杂结构与其余分子</h3>
+        <p class="cap">橙色为复杂结构组，灰色为其余分子。</p>
+        <div class="fnr" id="fnr"></div>
+      </div>
+      <div class="caveats">
+        <p>这个分数描述的是 AiZynthFinder 历史上是否找到了路线。它不提供反应路线、条件或产率，评估一条合成路线仍需要化学家判断。</p>
+        <p>环数超过 4 的分子，漏检率达到 26.51%，约是其余分子的四倍。对环系复杂的候选，不建议只凭这个分数推迟。</p>
+        <p>官方测试集已经评估过一次。继续改进方法需要新保留的或外部的评估数据。</p>
+        <p>这个页面展示的是已保存的执行结果。要为新分子打分，请在本地运行预测命令。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="run" aria-labelledby="run-h">
+    <h2 class="sec" id="run-h">在本地运行</h2>
+    <div class="runs">
+      <div>
+        <h3>只看交互式讲解</h3>
+        <p>只需要 Python 标准库，不用安装机器学习依赖。</p>
+<pre>python scripts/serve_demo.py</pre>
+      </div>
+      <div>
+        <h3>为新分子打分</h3>
+        <p>需要 Python 3.12 和锁定的依赖环境，详见仓库 README。</p>
+<pre>python scripts/predict.py \
+  --smiles "CCO" \
+  --smiles "CC(=O)Oc1ccccc1C(=O)O"</pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>数据来自 <a href="https://github.com/reymond-group/RAscore/tree/cb77db503ee5cbf0e8bb8963df6e5b76b3a94f06">RAscore</a> 的固定提交，讲解页面由 LecTrace 1.1.30 生成。</span>
+    <a href="https://github.com/Ashhspirt/synthesis-route-screening/blob/main/THIRD_PARTY_NOTICES.md">第三方声明</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/smiles-drawer@1.2.0/dist/smiles-drawer.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var TH = 0.5844208399454752;
+
+  /* Source: src/rascore/presentation/presentation_checks.json (first three validation rows, frozen models). */
+  var MOLS = [
+    {id:313401, hist:1, smiles:"O=c1n(-c2ccc(Cl)cc2)cnn1CCCN1CCN(CC(O)(Cn2cncn2)c2ccc(F)cc2F)CC1",
+     seeds:[0.663149,0.756619,0.746304], mean:0.722024},
+    {id:51937, hist:0, smiles:"CN1OC2(N=C1N)c1cc(Br)ccc1OC21CCc2ccccc2CC1",
+     seeds:[0.537566,0.408461,0.496351], mean:0.480793},
+    {id:217317, hist:1, smiles:"COc1cc(C)ccc1OC(=O)C1CCCN1C(=O)C(C)c1cccc(C(=O)c2ccccc2)c1",
+     seeds:[0.970952,0.959323,0.962868], mean:0.964381}
+  ];
+
+  /* Source: results/official_holdout_v1/reliability.csv, count_standard: [mean prob, observed fraction, n]. */
+  var REL = [[0.0630,0.0480,479],[0.1520,0.0925,843],[0.2486,0.2162,828],[0.3494,0.3442,738],[0.4524,0.4236,883],
+             [0.5534,0.5654,1261],[0.6517,0.7037,1657],[0.7529,0.7951,2113],[0.8547,0.8802,3096],[0.9625,0.9708,8037]];
+
+  /* Source: results/official_holdout_v1/structure_subgroups.csv, count_standard, recall90 (fnr). */
+  var FNR = [
+    {label:"环数 > 4", hi:26.51, lo:6.88},
+    {label:"受体数 > 6", hi:25.36, lo:7.99},
+    {label:"分子量 > 453", hi:21.64, lo:6.66},
+    {label:"供体数 > 2", hi:18.51, lo:8.42}
+  ];
+
+  function el(tag, attrs, text){
+    var n = document.createElement(tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* molecule explorer */
+  var tabs = document.getElementById("tabs");
+  var buttons = MOLS.map(function(m, i){
+    var b = el("button", {type:"button", role:"tab", id:"tab"+i, "aria-controls":"panel", "aria-selected":"false", tabindex:"-1"});
+    b.appendChild(document.createTextNode("示例分子 " + (i+1)));
+    b.appendChild(el("small", {}, "分数 " + m.mean.toFixed(3)));
+    b.addEventListener("click", function(){ select(i); });
+    b.addEventListener("keydown", function(e){
+      var d = (e.key === "ArrowDown" || e.key === "ArrowRight") ? 1 : (e.key === "ArrowUp" || e.key === "ArrowLeft") ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      var j = (i + d + MOLS.length) % MOLS.length;
+      select(j); buttons[j].focus();
+    });
+    tabs.appendChild(b);
+    return b;
+  });
+
+  var seedsBox = document.getElementById("seeds");
+  var rows = ["种子 42","种子 43","种子 44","平均"].map(function(name, k){
+    var r = el("div", {"class":"seed" + (k === 3 ? " avg" : "")});
+    var track = el("div", {"class":"track"});
+    var fill = el("div", {"class":"fill"});
+    var thr = el("div", {"class":"thr"});
+    thr.style.left = (TH*100) + "%";
+    track.appendChild(fill); track.appendChild(thr);
+    var v = el("span");
+    r.appendChild(el("span", {}, name)); r.appendChild(track); r.appendChild(v);
+    seedsBox.appendChild(r);
+    return {fill:fill, v:v};
+  });
+
+  function isDark(){
+    var t = document.documentElement.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  var current = 0;
+  function drawMol(){
+    var canvas = document.getElementById("mol");
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function fallback(){
+      ctx.fillStyle = isDark() ? "#99a9ba" : "#5a6878";
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("结构图需要联网加载，SMILES 见下方", canvas.width/2, canvas.height/2);
+    }
+    if (!window.SmilesDrawer) { fallback(); return; }
+    try {
+      var drawer = new SmilesDrawer.Drawer({width:420, height:315, bondThickness:1.2, padding:24});
+      SmilesDrawer.parse(MOLS[current].smiles, function(tree){
+        drawer.draw(tree, "mol", isDark() ? "dark" : "light", false);
+      }, fallback);
+    } catch (e) { fallback(); }
+  }
+
+  function select(i){
+    current = i;
+    var m = MOLS[i], go = m.mean >= TH;
+    buttons.forEach(function(b, j){
+      b.setAttribute("aria-selected", j === i ? "true" : "false");
+      b.setAttribute("tabindex", j === i ? "0" : "-1");
+    });
+    document.getElementById("panel").setAttribute("aria-labelledby", "tab"+i);
+    document.getElementById("meanv").textContent = m.mean.toFixed(4);
+    var v = document.getElementById("verdict");
+    v.className = "pill " + (go ? "go" : "hold");
+    v.textContent = go ? "优先搜索" : "推迟";
+    m.seeds.concat([m.mean]).forEach(function(p, k){
+      rows[k].fill.style.width = (p*100) + "%";
+      rows[k].v.textContent = p.toFixed(3);
+    });
+    document.getElementById("smiles").textContent = m.smiles;
+    document.getElementById("sid").textContent = m.id;
+    document.getElementById("hist").textContent = m.hist ? "找到了路线" : "未找到路线";
+    drawMol();
+  }
+  select(0);
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", drawMol);
+  }
+
+  /* reliability chart */
+  var NS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs, text){
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  var svg = document.getElementById("rel");
+  var L = 54, T = 12, W = 256, H = 196;
+  function X(v){ return L + v*W; }
+  function Y(v){ return T + (1-v)*H; }
+  [0, 0.25, 0.5, 0.75, 1].forEach(function(t){
+    svg.appendChild(s("line", {x1:X(0), x2:X(1), y1:Y(t), y2:Y(t), stroke:"var(--line)", "stroke-width":1}));
+    svg.appendChild(s("text", {x:L-8, y:Y(t)+4, "text-anchor":"end"}, String(t)));
+    svg.appendChild(s("text", {x:X(t), y:T+H+16, "text-anchor":"middle"}, String(t)));
+  });
+  svg.appendChild(s("line", {x1:X(0), y1:Y(0), x2:X(1), y2:Y(1), stroke:"var(--hold)", "stroke-dasharray":"4 4", "stroke-width":1.5}));
+  var maxN = Math.max.apply(null, REL.map(function(r){ return r[2]; }));
+  svg.appendChild(s("polyline", {points:REL.map(function(r){ return X(r[0])+","+Y(r[1]); }).join(" "), fill:"none", stroke:"var(--go)", "stroke-width":2}));
+  REL.forEach(function(r){
+    var c = s("circle", {cx:X(r[0]), cy:Y(r[1]), r:3 + 5*Math.sqrt(r[2]/maxN), fill:"var(--go)", "fill-opacity":0.85, stroke:"var(--paper)", "stroke-width":1.5});
+    c.appendChild(s("title", {}, "平均分 " + r[0].toFixed(3) + "，实际比例 " + r[1].toFixed(3) + "，" + r[2] + " 个分子"));
+    svg.appendChild(c);
+  });
+  svg.appendChild(s("text", {x:X(0.5), y:T+H+36, "text-anchor":"middle"}, "平均预测分数"));
+  svg.appendChild(s("text", {x:10, y:Y(0.5), "text-anchor":"middle", transform:"rotate(-90 10 "+Y(0.5)+")"}, "实际找到路线的比例"));
+
+  /* subgroup miss rates */
+  var fnr = document.getElementById("fnr");
+  var scale = 75 / 30;
+  FNR.forEach(function(f){
+    var row = el("div", {"class":"row"});
+    row.appendChild(el("span", {}, f.label));
+    var bars = el("div", {"class":"bars"});
+    [["hi", f.hi], ["lo", f.lo]].forEach(function(p){
+      var b = el("div", {"class":"b " + p[0]});
+      b.style.width = (p[1]*scale) + "%";
+      b.appendChild(el("em", {}, p[1].toFixed(2) + "%"));
+      bars.appendChild(b);
+    });
+    row.appendChild(bars);
+    fnr.appendChild(row);
+  });
+})();
+</script>
+</body>
+</html>
