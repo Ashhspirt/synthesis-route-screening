@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>合成路线筛选</title>
-<meta name="description" content="在 CPU 上运行的小型神经网络集成：只看分子结构，预测 AiZynthFinder 历史上能否找到合成路线，用于在昂贵的路线搜索之前排定优先级。">
+<title>Synthesis Route Screening</title>
+<meta name="description" content="A small CPU neural ensemble that predicts, from molecular structure alone, whether a historical AiZynthFinder search found a synthesis route, to prioritise expensive route searches.">
 <style>
 :root{
   --bg:#f5f7f8;--paper:#ffffff;--ink:#1a2636;--muted:#5d6a78;--line:#dfe5ea;
   --go:#1f6f8b;--go-soft:#dcebf1;--hold:#9aa6b2;--hold-soft:#e9edf1;--miss:#c26a2b;--miss-soft:#f7e6d8;
-  --serif:"Noto Serif SC","Source Han Serif SC","Songti SC","Iowan Old Style",Georgia,serif;
+  --serif:"Iowan Old Style","Charter","Source Serif Pro",Georgia,"Noto Serif SC",serif;
   --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
   --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;
 }
@@ -89,7 +89,7 @@ h2.sec{font:600 clamp(22px,2.6vw,28px)/1.35 var(--serif);margin:0 0 10px;padding
 .pill.go{background:var(--go-soft);color:var(--go)}
 .pill.hold{background:var(--hold-soft);color:var(--muted)}
 .seeds{display:flex;flex-direction:column;gap:9px;margin-bottom:22px}
-.seed{display:grid;grid-template-columns:64px 1fr 54px;align-items:center;gap:10px;font-size:13.5px}
+.seed{display:grid;grid-template-columns:60px 1fr 54px;align-items:center;gap:10px;font-size:13.5px}
 .seed .track{position:relative;height:12px;background:var(--hold-soft);border-radius:6px}
 .seed .fill{position:absolute;inset:0 auto 0 0;border-radius:6px;background:var(--hold);transition:width .45s cubic-bezier(.2,.7,.2,1)}
 .seed.avg .fill{background:var(--go)}
@@ -128,7 +128,7 @@ svg.chart text{font:11px var(--sans);fill:var(--muted)}
 
 .limits{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
 .fnr{display:flex;flex-direction:column;gap:14px}
-.fnr .row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;font-size:14px}
+.fnr .row{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:center;font-size:14px}
 .fnr .bars{display:flex;flex-direction:column;gap:4px}
 .fnr .b{height:14px;border-radius:3px;position:relative}
 .fnr .b.hi{background:var(--miss)}
@@ -171,143 +171,143 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   <header class="top">
     <div class="brand">
       <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2l9.5 5.5v11L13 24l-9.5-5.5v-11z" fill="none" stroke="var(--go)" stroke-width="2"/><circle cx="13" cy="13" r="3.2" fill="var(--go)"/></svg>
-      合成路线筛选
+      Synthesis Route Screening
     </div>
     <nav>
-      <a class="opt" href="#try">示例分子</a>
-      <a class="opt" href="#how">原理</a>
-      <a class="opt" href="#results">结果</a>
+      <a class="opt" href="#try">Examples</a>
+      <a class="opt" href="#how">Method</a>
+      <a class="opt" href="#results">Results</a>
       <a href="https://github.com/Ashhspirt/synthesis-route-screening">GitHub</a>
     </nav>
   </header>
 
   <div class="hero">
-    <h1>路线搜索很贵，先挑出最可能有结果的分子</h1>
-    <p class="lede">一个在 CPU 上运行的小型神经网络集成。只看分子结构，就能预测 AiZynthFinder 历史上是否为它找到了合成路线，让你把昂贵的路线搜索留给更有希望的候选。</p>
+    <h1>Route searches are expensive. Start with the molecules most likely to succeed.</h1>
+    <p class="lede">A small neural ensemble that runs on a CPU. From molecular structure alone, it predicts whether a historical AiZynthFinder search found a synthesis route, so expensive searches can go to the most promising candidates first.</p>
     <div class="actions">
-      <a class="btn primary" href="https://ashhspirt.github.io/synthesis-route-screening/lectrace/#/?trace=01_route_found&amp;step=1">打开交互式讲解</a>
-      <a class="btn ghost" href="https://github.com/Ashhspirt/synthesis-route-screening">查看源码</a>
+      <a class="btn primary" href="https://ashhspirt.github.io/synthesis-route-screening/lectrace/#/?trace=01_route_found&amp;step=1">Open the interactive walkthrough</a>
+      <a class="btn ghost" href="https://github.com/Ashhspirt/synthesis-route-screening">View the source</a>
     </div>
   </div>
 
   <div class="triage" role="figure" aria-labelledby="tri-h">
-    <h2 id="tri-h">在 19,935 个测试分子上，推迟约四分之一的搜索，仍保留九成有路线的分子</h2>
-    <p class="sub">按冻结阈值 0.5844 分流后的结果，条带宽度与分子数成正比。</p>
+    <h2 id="tri-h">On 19,935 test molecules, deferring about a quarter of searches still keeps 90% of the molecules with a route</h2>
+    <p class="sub">Outcome of triage at the frozen threshold of 0.5844. Segment widths are proportional to molecule counts.</p>
     <div class="band" aria-hidden="true">
-      <div class="tp" title="优先，历史上找到路线：13,530">13,530</div>
-      <div class="fp" title="优先，历史上未找到：1,612">1,612</div>
-      <div class="fn" title="推迟，但历史上找到路线：1,464">1,464</div>
-      <div class="tn" title="推迟，历史上也未找到：3,329">3,329</div>
+      <div class="tp" title="Prioritised, route found: 13,530">13,530</div>
+      <div class="fp" title="Prioritised, no route found: 1,612">1,612</div>
+      <div class="fn" title="Deferred, but a route was found: 1,464">1,464</div>
+      <div class="tn" title="Deferred, no route found: 3,329">3,329</div>
     </div>
     <div class="brace">
-      <div class="go"><b>15,142</b><span>优先搜索</span></div>
-      <div class="hold"><b>4,793</b><span>推迟</span></div>
+      <div class="go"><b>15,142</b><span>prioritised</span></div>
+      <div class="hold"><b>4,793</b><span>deferred</span></div>
     </div>
     <div class="key">
-      <span><i style="background:var(--go)"></i>优先，历史上找到路线 13,530</span>
-      <span><i style="background:var(--go-soft);outline:1px solid var(--go)"></i>优先，历史上未找到 1,612</span>
-      <span><i style="background:var(--miss)"></i>推迟，但历史上找到路线 1,464</span>
-      <span><i style="background:var(--hold-soft);outline:1px solid var(--hold)"></i>推迟，历史上也未找到 3,329</span>
+      <span><i style="background:var(--go)"></i>Prioritised, route found (13,530)</span>
+      <span><i style="background:var(--go-soft);outline:1px solid var(--go)"></i>Prioritised, no route found (1,612)</span>
+      <span><i style="background:var(--miss)"></i>Deferred, but a route was found (1,464)</span>
+      <span><i style="background:var(--hold-soft);outline:1px solid var(--hold)"></i>Deferred, no route found (3,329)</span>
     </div>
   </div>
 
   <section id="try" aria-labelledby="try-h">
-    <h2 class="sec" id="try-h">看模型如何判断一个分子</h2>
-    <p class="intro">这三个分子是最终验证集保存预测的前三行，在查看分数之前就已选定。三个模型各自打分，取平均后与阈值比较。</p>
+    <h2 class="sec" id="try-h">How the model scores a molecule</h2>
+    <p class="intro">These are the first three rows of the saved final validation predictions, chosen before their scores were examined. Each of the three models scores the molecule, and the average is compared with the threshold.</p>
     <div class="explorer">
-      <div class="tabs" role="tablist" aria-label="示例分子" id="tabs"></div>
+      <div class="tabs" role="tablist" aria-label="Example molecules" id="tabs"></div>
       <div class="panel" role="tabpanel" id="panel" tabindex="0">
         <div class="struct">
-          <div class="canvasbox"><canvas id="mol" width="420" height="315" aria-label="当前示例分子的结构图"></canvas></div>
+          <div class="canvasbox"><canvas id="mol" width="420" height="315" aria-label="Structure of the selected example molecule"></canvas></div>
           <div class="smiles" id="smiles"></div>
         </div>
         <div class="reading">
-          <h3>三个模型的平均分</h3>
+          <h3>Mean score of the three models</h3>
           <div class="mean"><strong id="meanv">–</strong><span class="pill" id="verdict"></span></div>
           <div class="seeds" id="seeds"></div>
           <dl class="facts">
-            <dt>来源编号</dt><dd id="sid"></dd>
-            <dt>历史结果</dt><dd id="hist"></dd>
+            <dt>Source ID</dt><dd id="sid"></dd>
+            <dt>Historical outcome</dt><dd id="hist"></dd>
           </dl>
-          <p class="note">虚线是冻结阈值 0.5844。分数描述的是规划器的历史结果，不是可合成性的结论。</p>
+          <p class="note">The dashed line marks the frozen threshold of 0.5844. The score describes a historical planning outcome, not whether the molecule can be synthesised.</p>
         </div>
       </div>
     </div>
   </section>
 
   <section id="how" aria-labelledby="how-h">
-    <h2 class="sec" id="how-h">从 SMILES 到筛选决定</h2>
-    <p class="intro">整个流程在两个 CPU 线程上完成，不需要 GPU。单次预测只需加载三个冻结模型。</p>
+    <h2 class="sec" id="how-h">From SMILES to a screening decision</h2>
+    <p class="intro">The whole pipeline runs on two CPU threads with no GPU. A single prediction only loads the three frozen models.</p>
     <div class="steps">
-      <div class="step"><h3>解析结构</h3><p>读入 SMILES，无效输入会明确报错，不会静默跳过。</p></div>
-      <div class="step"><h3>编码特征</h3><p>Morgan 计数指纹（半径 2，1,024 位）经 <code>log1p</code>，加上只用训练集缩放的 5 个描述符，共 1,029 维。</p></div>
-      <div class="step"><h3>三个网络打分</h3><p>隐层 256 → 128 → 64，ReLU，dropout 0.2。种子 42、43、44 各训练一个，按验证损失恢复最佳检查点。</p></div>
-      <div class="step"><h3>平均并决策</h3><p>三个 sigmoid 输出取平均，达到 0.5844 就标记为优先。阈值在验证集上选出，偏向少漏候选。</p></div>
+      <div class="step"><h3>Parse the structure</h3><p>The SMILES string is read in. Invalid input raises an explicit error instead of being skipped.</p></div>
+      <div class="step"><h3>Encode features</h3><p>A Morgan count fingerprint (radius 2, 1,024 bits) passed through <code>log1p</code>, plus five descriptors scaled on training data only: 1,029 inputs.</p></div>
+      <div class="step"><h3>Score with three networks</h3><p>Hidden layers 256 → 128 → 64, ReLU, dropout 0.2. One model per seed (42, 43, 44), each restored at its best validation loss.</p></div>
+      <div class="step"><h3>Average and decide</h3><p>The three sigmoid outputs are averaged; a mean of 0.5844 or more is prioritised. The threshold was chosen on validation data to favour fewer missed candidates.</p></div>
     </div>
   </section>
 
   <section id="results" aria-labelledby="res-h">
-    <h2 class="sec" id="res-h">保存下来的评估结果</h2>
-    <p class="intro">官方测试集有 19,935 个分子，其中 75.2% 历史上找到了路线。以下数字全部来自仓库中保存的评估输出，可用 <code>verify_release.py</code> 只读核验。</p>
+    <h2 class="sec" id="res-h">Saved evaluation results</h2>
+    <p class="intro">The official test set has 19,935 molecules, 75.2% of which had a route found. Every number below comes from the saved evaluation outputs in the repository and can be checked read-only with <code>verify_release.py</code>.</p>
     <div class="stats">
-      <div class="stat"><strong>0.8888</strong><span>AUROC。比只记录有无的二值指纹高 0.00362，95% 区间 0.00232–0.00495。</span></div>
-      <div class="stat"><strong>90.24%</strong><span>召回导向阈值下保留的历史阳性比例。比二值版本少漏 160 个，多选 45 个。</span></div>
-      <div class="stat"><strong>0.8811</strong><span>只看骨架从未在训练中出现过的 14,742 个分子时的 AUROC，召回为 88.82%。</span></div>
+      <div class="stat"><strong>0.8888</strong><span>AUROC, 0.00362 above the matched binary fingerprint (95% interval 0.00232–0.00495).</span></div>
+      <div class="stat"><strong>90.24%</strong><span>Share of historical positives kept at the recall-oriented threshold: 160 fewer misses and 45 more false positives than the binary version.</span></div>
+      <div class="stat"><strong>0.8811</strong><span>AUROC on the 14,742 molecules whose scaffold never appeared in training, with 88.82% recall.</span></div>
     </div>
     <div class="duo">
       <div class="card">
-        <h3>两种指纹在同一阈值策略下的对比</h3>
-        <p class="cap">召回导向策略，各自在验证集上选阈值。</p>
+        <h3>Count vs binary fingerprints under the same policy</h3>
+        <p class="cap">Recall-oriented policy; each model's threshold was chosen on validation data.</p>
         <table>
-          <thead><tr><th scope="col">指标</th><th scope="col">计数指纹</th><th scope="col">二值指纹</th></tr></thead>
+          <thead><tr><th scope="col">Metric</th><th scope="col">Count</th><th scope="col">Binary</th></tr></thead>
           <tbody>
             <tr><td>AUROC</td><td class="win">0.8888</td><td>0.8852</td></tr>
-            <tr><td>平均精度</td><td class="win">0.9575</td><td>0.9557</td></tr>
-            <tr><td>Brier 分数（越低越好）</td><td class="win">0.1088</td><td>0.1102</td></tr>
-            <tr><td>召回</td><td class="win">90.24%</td><td>89.17%</td></tr>
-            <tr><td>漏掉的候选</td><td class="win">1,464</td><td>1,624</td></tr>
-            <tr><td>多选的候选</td><td>1,612</td><td class="win">1,567</td></tr>
-            <tr><td>阈值</td><td>0.5844</td><td>0.6054</td></tr>
+            <tr><td>Average precision</td><td class="win">0.9575</td><td>0.9557</td></tr>
+            <tr><td>Brier score (lower is better)</td><td class="win">0.1088</td><td>0.1102</td></tr>
+            <tr><td>Recall</td><td class="win">90.24%</td><td>89.17%</td></tr>
+            <tr><td>Missed candidates (FN)</td><td class="win">1,464</td><td>1,624</td></tr>
+            <tr><td>Extra candidates (FP)</td><td>1,612</td><td class="win">1,567</td></tr>
+            <tr><td>Threshold</td><td>0.5844</td><td>0.6054</td></tr>
           </tbody>
         </table>
       </div>
       <div class="card">
-        <h3>分数基本可以当作概率来读</h3>
-        <p class="cap">按分数分成 10 组，比较平均分与实际找到路线的比例。点的大小代表分子数，越靠近对角线，校准越好。</p>
-        <svg class="chart" id="rel" viewBox="0 0 320 254" role="img" aria-label="校准曲线：计数集成在 10 个分数区间的平均预测与实际比例基本沿对角线分布"></svg>
+        <h3>Scores read roughly as probabilities</h3>
+        <p class="cap">Molecules binned into 10 score groups, comparing mean score with the observed share that had a route. Dot size shows the number of molecules; points near the diagonal mean good calibration.</p>
+        <svg class="chart" id="rel" viewBox="0 0 320 254" role="img" aria-label="Reliability curve: across 10 score bins, the count ensemble's mean prediction closely follows the observed fraction"></svg>
       </div>
     </div>
   </section>
 
   <section id="limits" aria-labelledby="lim-h">
-    <h2 class="sec" id="lim-h">使用前请了解它的盲区</h2>
-    <p class="intro">结构越复杂，模型越容易把有路线的分子推迟。下面是召回导向阈值下各结构子组的漏检率，即历史上找到路线却被推迟的比例。</p>
+    <h2 class="sec" id="lim-h">Know its blind spots</h2>
+    <p class="intro">The more complex the structure, the more often a molecule with a route gets deferred. Below are false-negative rates by structural subgroup at the recall-oriented threshold.</p>
     <div class="limits">
       <div class="card">
-        <h3>漏检率：复杂结构与其余分子</h3>
-        <p class="cap">橙色为复杂结构组，灰色为其余分子。</p>
+        <h3>False-negative rate: complex structures vs the rest</h3>
+        <p class="cap">Orange is the complex group; grey is all other molecules.</p>
         <div class="fnr" id="fnr"></div>
       </div>
       <div class="caveats">
-        <p>这个分数描述的是 AiZynthFinder 历史上是否找到了路线。它不提供反应路线、条件或产率，评估一条合成路线仍需要化学家判断。</p>
-        <p>环数超过 4 的分子，漏检率达到 26.51%，约是其余分子的四倍。对环系复杂的候选，不建议只凭这个分数推迟。</p>
-        <p>官方测试集已经评估过一次。继续改进方法需要新保留的或外部的评估数据。</p>
-        <p>这个页面展示的是已保存的执行结果。要为新分子打分，请在本地运行预测命令。</p>
+        <p>The score describes whether AiZynthFinder historically found a route. It gives no reaction route, conditions or yields; assessing a synthesis still needs a chemist.</p>
+        <p>For molecules with more than four rings, the false-negative rate is 26.51%, about four times that of the rest. Avoid deferring ring-rich candidates on this score alone.</p>
+        <p>The official test set has already been evaluated once. Further method development needs newly reserved or external evaluation data.</p>
+        <p>This page presents saved results. To score new molecules, run the prediction command locally.</p>
       </div>
     </div>
   </section>
 
   <section id="run" aria-labelledby="run-h">
-    <h2 class="sec" id="run-h">在本地运行</h2>
+    <h2 class="sec" id="run-h">Run it locally</h2>
     <div class="runs">
       <div>
-        <h3>只看交互式讲解</h3>
-        <p>只需要 Python 标准库，不用安装机器学习依赖。</p>
+        <h3>View the walkthrough</h3>
+        <p>Needs only the Python standard library, with no machine-learning dependencies.</p>
 <pre>python scripts/serve_demo.py</pre>
       </div>
       <div>
-        <h3>为新分子打分</h3>
-        <p>需要 Python 3.12 和锁定的依赖环境，详见仓库 README。</p>
+        <h3>Score new molecules</h3>
+        <p>Needs Python 3.12 and the locked environment; see the repository README.</p>
 <pre>python scripts/predict.py \
   --smiles "CCO" \
   --smiles "CC(=O)Oc1ccccc1C(=O)O"</pre>
@@ -318,8 +318,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 
 <footer>
   <div class="wrap">
-    <span>数据来自 <a href="https://github.com/reymond-group/RAscore/tree/cb77db503ee5cbf0e8bb8963df6e5b76b3a94f06">RAscore</a> 的固定提交，讲解页面由 LecTrace 1.1.30 生成。</span>
-    <a href="https://github.com/Ashhspirt/synthesis-route-screening/blob/main/THIRD_PARTY_NOTICES.md">第三方声明</a>
+    <span>Data from the pinned <a href="https://github.com/reymond-group/RAscore/tree/cb77db503ee5cbf0e8bb8963df6e5b76b3a94f06">RAscore</a> commit. Walkthrough built with LecTrace 1.1.30.</span>
+    <a href="https://github.com/Ashhspirt/synthesis-route-screening/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>
   </div>
 </footer>
 
@@ -345,10 +345,10 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 
   /* Source: results/official_holdout_v1/structure_subgroups.csv, count_standard, recall90 (fnr). */
   var FNR = [
-    {label:"环数 > 4", hi:26.51, lo:6.88},
-    {label:"受体数 > 6", hi:25.36, lo:7.99},
-    {label:"分子量 > 453", hi:21.64, lo:6.66},
-    {label:"供体数 > 2", hi:18.51, lo:8.42}
+    {label:"Rings > 4", hi:26.51, lo:6.88},
+    {label:"H-acceptors > 6", hi:25.36, lo:7.99},
+    {label:"Mol. weight > 453", hi:21.64, lo:6.66},
+    {label:"H-donors > 2", hi:18.51, lo:8.42}
   ];
 
   function el(tag, attrs, text){
@@ -362,8 +362,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   var tabs = document.getElementById("tabs");
   var buttons = MOLS.map(function(m, i){
     var b = el("button", {type:"button", role:"tab", id:"tab"+i, "aria-controls":"panel", "aria-selected":"false", tabindex:"-1"});
-    b.appendChild(document.createTextNode("示例分子 " + (i+1)));
-    b.appendChild(el("small", {}, "分数 " + m.mean.toFixed(3)));
+    b.appendChild(document.createTextNode("Example " + (i+1)));
+    b.appendChild(el("small", {}, "score " + m.mean.toFixed(3)));
     b.addEventListener("click", function(){ select(i); });
     b.addEventListener("keydown", function(e){
       var d = (e.key === "ArrowDown" || e.key === "ArrowRight") ? 1 : (e.key === "ArrowUp" || e.key === "ArrowLeft") ? -1 : 0;
@@ -377,7 +377,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   });
 
   var seedsBox = document.getElementById("seeds");
-  var rows = ["种子 42","种子 43","种子 44","平均"].map(function(name, k){
+  var rows = ["Seed 42","Seed 43","Seed 44","Mean"].map(function(name, k){
     var r = el("div", {"class":"seed" + (k === 3 ? " avg" : "")});
     var track = el("div", {"class":"track"});
     var fill = el("div", {"class":"fill"});
@@ -405,7 +405,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
       ctx.fillStyle = isDark() ? "#99a9ba" : "#5a6878";
       ctx.font = "14px system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("结构图需要联网加载，SMILES 见下方", canvas.width/2, canvas.height/2);
+      ctx.fillText("Structure needs a network connection; SMILES below", canvas.width/2, canvas.height/2);
     }
     if (!window.SmilesDrawer) { fallback(); return; }
     try {
@@ -427,14 +427,14 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
     document.getElementById("meanv").textContent = m.mean.toFixed(4);
     var v = document.getElementById("verdict");
     v.className = "pill " + (go ? "go" : "hold");
-    v.textContent = go ? "优先搜索" : "推迟";
+    v.textContent = go ? "Prioritise" : "Defer";
     m.seeds.concat([m.mean]).forEach(function(p, k){
       rows[k].fill.style.width = (p*100) + "%";
       rows[k].v.textContent = p.toFixed(3);
     });
     document.getElementById("smiles").textContent = m.smiles;
     document.getElementById("sid").textContent = m.id;
-    document.getElementById("hist").textContent = m.hist ? "找到了路线" : "未找到路线";
+    document.getElementById("hist").textContent = m.hist ? "Route found" : "No route found";
     drawMol();
   }
   select(0);
@@ -465,11 +465,11 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   svg.appendChild(s("polyline", {points:REL.map(function(r){ return X(r[0])+","+Y(r[1]); }).join(" "), fill:"none", stroke:"var(--go)", "stroke-width":2}));
   REL.forEach(function(r){
     var c = s("circle", {cx:X(r[0]), cy:Y(r[1]), r:3 + 5*Math.sqrt(r[2]/maxN), fill:"var(--go)", "fill-opacity":0.85, stroke:"var(--paper)", "stroke-width":1.5});
-    c.appendChild(s("title", {}, "平均分 " + r[0].toFixed(3) + "，实际比例 " + r[1].toFixed(3) + "，" + r[2] + " 个分子"));
+    c.appendChild(s("title", {}, "Mean score " + r[0].toFixed(3) + ", observed " + r[1].toFixed(3) + ", " + r[2] + " molecules"));
     svg.appendChild(c);
   });
-  svg.appendChild(s("text", {x:X(0.5), y:T+H+36, "text-anchor":"middle"}, "平均预测分数"));
-  svg.appendChild(s("text", {x:10, y:Y(0.5), "text-anchor":"middle", transform:"rotate(-90 10 "+Y(0.5)+")"}, "实际找到路线的比例"));
+  svg.appendChild(s("text", {x:X(0.5), y:T+H+36, "text-anchor":"middle"}, "Mean predicted score"));
+  svg.appendChild(s("text", {x:10, y:Y(0.5), "text-anchor":"middle", transform:"rotate(-90 10 "+Y(0.5)+")"}, "Observed route-found fraction"));
 
   /* subgroup miss rates */
   var fnr = document.getElementById("fnr");
