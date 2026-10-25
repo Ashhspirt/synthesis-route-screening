@@ -1,6 +1,6 @@
 # LecTrace presentation
 
-The lecture follows three saved validation molecules through molecular parsing, feature encoding, neural activations and ensemble decisions. It contains four selected computational states, 39 navigation steps and eight scientific illustrations.
+The lecture follows three saved validation molecules through molecular parsing, feature encoding, neural activations and ensemble decisions. It contains four selected computational states, 63 navigation steps and eight scientific illustrations.
 
 From the repository root, run `python scripts/serve_demo.py`. The prebuilt public viewer requires only the Python standard library. Use arrow keys to move and E to open the variable panel.
 

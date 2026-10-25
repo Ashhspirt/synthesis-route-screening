@@ -3,10 +3,10 @@
   "traces": [
     {
       "id": "01_route_found",
-      "title": "Can a small neural network help prioritize synthesis route searches?",
+      "title": "Can a small neural network help prioritize synthesis route searches in early drug discovery?",
       "path": "traces/01_route_found.json",
-      "step_count": 39,
-      "built_at": "2026-10-25T11:22:34.671155+00:00"
+      "step_count": 63,
+      "built_at": "2026-10-25T15:10:40.128224+00:00"
     }
   ]
 }

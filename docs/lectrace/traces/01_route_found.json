@@ -3,71 +3,76 @@
   "metadata": {
     "title": "01_route_found",
     "module": "01_route_found",
-    "built_at": "2026-10-25T11:22:34.671155+00:00",
-    "source_hash": "d409aa9e37291d65dae6cf9e3a4df31bc1790c361706702beb863140f57e690a",
+    "built_at": "2026-10-25T15:10:40.128224+00:00",
+    "source_hash": "7a7e605992b3f038f5a06b759aee96fd7791c07c8c74a620a1a1b617b95e7e87",
     "python_version": "3.12.14",
     "lectrace_version": "1.1.30",
     "error": null
   },
   "files": {
-    "01_route_found.py": "\"\"\"MD6329 synthesis planning: four selected computation states.\"\"\"\nfrom pathlib import Path\nfrom lectrace import text, image\nfrom _model_demo import load_demo, molecule_state, features, forward, decision, saved_results\nHERE = Path(__file__).resolve().parent\nFIGURES = HERE / 'figures'\n\n\ndef main():\n    demo = load_demo()  # @invisible\n    text(\n        '# Can a small neural network help prioritize synthesis route searches?'\n    )\n    text(\n        '**Molecular synthesis route screening**  \\nCPU-based deep learning study'\n    )\n    text(\n        '**Motivation.** A difficult reaction can delay an entire synthesis route. This study asks an affordable screening question: can molecular structure predict a historical route-search outcome?'\n    )\n    text(\n        '**Screening problem.** Running a multistep planner for every molecule costs time. A fast score can prioritize searches, but missing a useful molecule has a cost. Label **1** means the historical AiZynthFinder run found a route; label **0** means it did not under its search conditions.'\n    )\n    text(\n        '**Research questions.** Does a lightweight MLP improve on simple classifiers? Do substructure counts and whole-molecule descriptors help on unfamiliar scaffolds? What does reducing missed candidates cost in additional searches?'\n    )\n    image(str(FIGURES / 'pipeline.png'), width='100%')\n    text(\n        '**Study design.** Use 20,000 development molecules, repeated random and scaffold splits, and three training seeds. Validation selects the configuration and threshold. A separate 19,935-molecule test evaluates the frozen comparison. Four selected states follow the same three validation molecules from structure to decision.'\n    )\n\n    text(\n        '## State 1 \u2014 Turn molecular structures into labeled inputs'\n    )\n    molecules = molecule_state(demo)  # @inspect molecules @stepover\n    image(str(HERE / 'demo_molecules.png'), width='100%')\n    text(\n        '**What changes?** Stored SMILES become molecular structures paired with historical route-found labels. These are the first three saved validation rows, chosen without looking for successful predictions. Expand `molecules` to inspect their source IDs, labels and structure strings.'\n    )\n    text(\n        '**Why it matters.** A scaffold split keeps shared core structures together, testing transfer beyond those cores. A route-found label describes a planning outcome; reaction conditions and yields still require separate investigation.'\n    )\n\n    text(\n        '## State 2 \u2014 Encode local patterns and whole-molecule properties'\n    )\n    x, feature_state = features(demo)  # @inspect feature_state @clear molecules @stepover\n    text(\n        '**Core operations inside `features`.**\\n\\n```python\\nscaled = (descriptors - mean) / scale\\nlocal = np.log1p(counts)\\nx = np.concatenate([local, scaled], axis=1)\\n```\\n\\nCounts preserve repeated environments. Five descriptors use training-only scaling. The matrix has **3 rows \u00d7 1,029 columns**: 1,024 fingerprint positions plus molecular weight, rings, rotatable bonds, donors and acceptors.'\n    )\n    image(str(FIGURES / 'feature_encoding.png'), width='100%')\n    text(\n        '**Read the actual example.** One hashed position occurs ten times in the first molecule. Binary encoding gives 1; counts retain 10 before log(1 + count) gives about 2.398. This is a hashed bin, not a unique chemical group. The descriptor panel shows the same molecule before and after training-set scaling.'\n    )\n    image(str(FIGURES / 'representation_comparison.png'), width='100%')\n    text(\n        '**Why choose counts?** Fixed fingerprints keep repeated CPU experiments affordable. Counts improve development AUROC in all paired splits, while stronger regularization is not consistently better. Error bars show variation across three split means. A graph model could learn its encoding, but needs a separate comparison.'\n    )\n\n    text(\n        '## State 3 \u2014 Transform features into neural predictions'\n    )\n    probabilities, network_state = forward(demo, x)  # @inspect network_state @clear feature_state @stepover\n    text(\n        '**Core forward-pass operations.** Hidden layers apply affine transformations and ReLU; sigmoid turns the final logit into a probability. Each of three independently trained models receives the same input.\\n\\n```python\\nmodel.eval()\\ninputs = torch.from_numpy(x)\\nwith torch.no_grad():\\n    logits = model(inputs)\\n    probability = torch.sigmoid(logits)\\n```\\n\\nReal frozen weights are used, with dropout disabled and no gradient updates.'\n    )\n    image(str(FIGURES / 'network_activations.png'), width='100%')\n    text(\n        '**What the colors show.** The heatmap contains the first six actual ReLU activations per hidden layer for the first molecule in seed 42. Zero means inactive on this input. These sampled units illustrate computation; they are not a chemical attribution.'\n    )\n    text(\n        '**Why this network?** Nonlinear layers combine local patterns and global properties. The smaller network saves about 77.5% of parameters but loses development AUROC. Early stopping and dropout control fitting. Final models restore epoch 2, where validation loss is lowest, despite later falls in training loss.'\n    )\n\n    text(\n        '## State 4 \u2014 Average predictions and make a screening decision'\n    )\n    decisions = decision(demo, probabilities)  # @inspect decisions @clear network_state @stepover\n    text(\n        '**Core decision operations.**\\n\\n```python\\nmean_probability = probabilities.mean(axis=1)\\npositive = mean_probability >= threshold\\npredicted_label = positive.astype(int)\\n```\\n\\nEqual averaging uses all three fits. The frozen validation threshold, **0.5844208399**, encodes the preference for fewer missed candidates. Equality counts as positive. Expand `decisions` to compare scores, predictions and historical labels.'\n    )\n    image(str(FIGURES / 'ensemble_decisions.png'), width='100%')\n    text(\n        '**Read the plot.** Small points show each seed; diamonds show their means. A mean to the right of the threshold enters the priority queue. These examples explain the computation, and their means match the saved validation predictions.'\n    )\n    image(str(FIGURES / 'threshold_tradeoff.png'), width='100%')\n    text(\n        '**Lecture 2, slides 92 and 99.** AUROC measures ranking; the operating threshold determines decisions. For the same count model, the recall policy avoids **1,323 misses** but adds **573 false positives** compared with the balanced policy. Threshold changes leave AUROC unchanged.'\n    )\n\n    text(\n        '## What did the held-out comparison establish?'\n    )\n    results = saved_results()  # @invisible\n    text(\n        '**A small ranking improvement.** On 19,935 held-out molecules, count-ensemble AUROC is **0.8888**, versus **0.8852** for binary. The paired gain is **0.00362**, with 95% bootstrap interval **0.00232\u20130.00495**. Default count recall is **90.24%**. At fixed recall-oriented thresholds, counts avoid **160 misses** at the cost of **45 extra false positives**. These are saved evaluation results.'\n    )\n    image(str(FIGURES / 'structural_errors.png'), width='100%')\n    text(\n        '**Where it still struggles.** Recall is **88.82%** on scaffolds absent from development. Molecules with more than four rings have **26.51%** false negatives. Preserve review opportunities for deferred molecules, especially difficult structures.'\n    )\n    text(\n        '**Healthcare interpretation and next step.** The model provides a low-cost priority score for later synthesis searches. Earlier synthesis triage could reduce avoidable delays before biological testing and help promising drug candidates progress toward new treatments; actual workflow and patient-access benefits need prospective validation. It does not produce a reaction route. Next, inspect planner traces for difficult structures and evaluate changes on newly reserved or external data. Chirality-aware fingerprints and graph representations are potential comparisons.'\n    )\n    text(\n        '**AI assistance and sources.** AI assisted project planning, implementation and writing. The screening policy prioritizes fewer missed candidates. Sources: RAscore (Thakkar et al., 2021), AiZynthFinder (Genheden et al., 2020), RDKit and MD6329 Lecture 2. Data and software attribution are available in THIRD_PARTY_NOTICES.md.'\n    )\n\n\nif __name__ == '__main__':\n    main()\n\n"
+    "01_route_found.py": "\"\"\"MD6329 synthesis planning for early drug discovery: four selected computation states.\"\"\"\nfrom pathlib import Path\nimport numpy as np\nimport torch\nfrom lectrace import text, image\nfrom _model_demo import load_demo, molecule_state, features, layer_summary, decision, saved_results\nHERE = Path(__file__).resolve().parent\nFIGURES = HERE / 'figures'\n\n\ndef main():\n    demo = load_demo()  # @invisible\n    text(\n        '# Can a small neural network help prioritize synthesis route searches in early drug discovery?'\n    )\n    text(\n        '**Molecular synthesis route screening for early drug discovery**  \\nCPU-based deep learning study'\n    )\n    text(\n        '**Healthcare problem.** New medicines start as candidate molecules. Before a promising candidate can enter biological testing, and eventually preclinical and clinical development for patients, chemists must find a practical way to make it. A single difficult reaction can stall that path for weeks.'\n    )\n    text(\n        '**Screening problem.** Computer-aided retrosynthesis planners can search for routes, but running a multistep planner for every candidate costs time. A fast score can decide which candidates to search first, but missing a useful drug candidate has a cost. Label **1** means the historical AiZynthFinder run found a route; label **0** means it did not under its search conditions.'\n    )\n    text(\n        '**Research questions.** Does a lightweight MLP improve on simple classifiers? Do substructure counts and whole-molecule descriptors help on unfamiliar scaffolds? What does reducing missed candidates cost in additional searches?'\n    )\n    image(str(FIGURES / 'pipeline.png'), width='100%')\n    text(\n        '**Study design.** Use 20,000 ChEMBL-derived, bioactivity-related development molecules, repeated random and scaffold splits, and three training seeds. Validation selects the configuration and threshold. A separate 19,935-molecule test evaluates the frozen comparison. Four selected states follow the same three validation molecules from structure to decision.'\n    )\n\n    text(\n        '## State 1 \u2014 Turn molecular structures into labeled inputs'\n    )\n    molecules = molecule_state(demo)  # @inspect molecules @stepover\n    image(str(HERE / 'demo_molecules.png'), width='100%')\n    text(\n        '**What changes?** Stored SMILES become molecular structures paired with historical route-found labels. These are the first three saved validation rows, chosen without looking for successful predictions. Expand `molecules` to inspect their source IDs, labels and structure strings.'\n    )\n    text(\n        '**Why it matters.** A scaffold split keeps shared core structures together, testing transfer beyond those cores. A route-found label describes a planning outcome; reaction conditions and yields still require separate investigation.'\n    )\n\n    text(\n        '## State 2 \u2014 Encode local patterns and whole-molecule properties'\n    )\n    x, feature_state = features(demo)  # @inspect feature_state @clear molecules @stepover\n    text(\n        '**Core operations inside `features`.**\\n\\n```python\\nscaled = (descriptors - mean) / scale\\nlocal = np.log1p(counts)\\nx = np.concatenate([local, scaled], axis=1)\\n```\\n\\nCounts preserve repeated environments. Five descriptors use training-only scaling. The matrix has **3 rows \u00d7 1,029 columns**: 1,024 fingerprint positions plus molecular weight, rings, rotatable bonds, donors and acceptors.'\n    )\n    image(str(FIGURES / 'feature_encoding.png'), width='100%')\n    text(\n        '**Read the actual example.** One hashed position occurs ten times in the first molecule. Binary encoding gives 1; counts retain 10 before log(1 + count) gives about 2.398. This is a hashed bin, not a unique chemical group. The descriptor panel shows the same molecule before and after training-set scaling.'\n    )\n    image(str(FIGURES / 'representation_comparison.png'), width='100%')\n    text(\n        '**Why choose counts?** Fixed fingerprints keep repeated CPU experiments affordable. Counts improve development AUROC in all paired splits, while stronger regularization is not consistently better. Error bars show variation across three split means. A graph model could learn its encoding, but needs a separate comparison.'\n    )\n\n    text(\n        '## State 3 \u2014 Transform features into neural predictions'\n    )\n    text(\n        '**What happens.** We now run the frozen seed-42 network one layer at a time on the 3 \u00d7 1,029 input matrix. Each hidden block is a linear layer followed by ReLU; dropout is inactive in evaluation mode and no gradients are computed. Watch `layer1`, `layer2` and `layer3` appear in the variable panel.'\n    )\n    net = demo['models'][0]  # @stepover\n    inputs = torch.from_numpy(x)  # @clear feature_state\n    with torch.no_grad():\n        h1 = net[1](net[0](inputs))  # @stepover\n        layer1 = layer_summary(h1)  # @inspect layer1 @stepover\n        h2 = net[4](net[3](h1))  # @stepover\n        layer2 = layer_summary(h2)  # @inspect layer2 @stepover\n        h3 = net[7](net[6](h2))  # @stepover\n        layer3 = layer_summary(h3)  # @inspect layer3 @stepover\n        logit = net[9](h3)  # @stepover\n        seed42_logit = logit.squeeze(1).tolist()  # @inspect seed42_logit\n        seed42_probability = torch.sigmoid(logit).squeeze(1).tolist()  # @inspect seed42_probability\n    text(\n        '**What changes.** The representation shrinks from **1,029 \u2192 256 \u2192 128 \u2192 64 \u2192 1** values per molecule. ReLU sets negative pre-activations to zero, so `active_units_per_molecule` counts how many hidden units fire for each molecule. The final logit is unbounded; sigmoid maps it into a probability between 0 and 1.'\n    )\n    image(str(FIGURES / 'network_activations.png'), width='100%')\n    text(\n        '**Repeat for all three seeds.** The same input passes through the seed-43 and seed-44 networks, giving one probability per molecule per model.'\n    )\n    with torch.no_grad():\n        probabilities = np.stack([torch.sigmoid(model(inputs)).squeeze(1).numpy().astype(np.float64) for model in demo['models']], axis=1)  # @stepover\n    assert np.allclose(probabilities[:, 0], seed42_probability, atol=1e-6)  # @invisible\n    three_seed_probabilities = probabilities.round(4).tolist()  # @inspect three_seed_probabilities @clear layer1 layer2 layer3\n    text(\n        '**Why it matters.** Nonlinear layers combine local substructure patterns with global properties such as size and ring count. The smaller network saves about 77.5% of parameters but loses development AUROC. Final models restore epoch 2, where validation loss is lowest, despite later falls in training loss. The heatmap shows sampled units, not a chemical attribution.'\n    )\n\n    text(\n        '## State 4 \u2014 Average predictions and make a screening decision'\n    )\n    text(\n        '**What happens.** The three seed probabilities are averaged, then compared with a threshold frozen on validation data before testing.'\n    )\n    threshold = demo['threshold']  # @inspect threshold\n    mean_probability = probabilities.mean(axis=1)\n    ensemble_mean = mean_probability.round(4).tolist()  # @inspect ensemble_mean @clear seed42_logit seed42_probability\n    positive = mean_probability >= threshold\n    predicted_label = positive.astype(int).tolist()  # @inspect predicted_label\n    historical_label = [m['historical_label'] for m in molecules]  # @inspect historical_label\n    decisions = decision(demo, probabilities)  # @inspect decisions @stepover\n    text(\n        '**What changes.** Three probabilities per molecule collapse into one ensemble score, and the score becomes a yes/no action: **1** = search this candidate first, **0** = defer it. Compare `predicted_label` with `historical_label`. The `decision` call also checks that these means match the saved validation predictions.'\n    )\n    image(str(FIGURES / 'ensemble_decisions.png'), width='100%')\n    text(\n        '**Why it matters.** Averaging uses all three fits rather than trusting one initialization. The threshold, about **0.5844**, retains at least 90% of validation positives, encoding the preference for fewer missed drug candidates; equality counts as positive.'\n    )\n    image(str(FIGURES / 'threshold_tradeoff.png'), width='100%')\n    text(\n        '**Lecture 2, slides 92 and 99.** AUROC measures ranking; the operating threshold determines decisions. For the same count model, the recall policy avoids **1,323 misses** but adds **573 false positives** compared with the balanced policy. Threshold changes leave AUROC unchanged.'\n    )\n\n    text(\n        '## What did the held-out comparison establish?'\n    )\n    results = saved_results()  # @invisible\n    text(\n        '**A small ranking improvement.** On 19,935 held-out molecules, count-ensemble AUROC is **0.8888**, versus **0.8852** for binary. The paired gain is **0.00362**, with 95% bootstrap interval **0.00232\u20130.00495**. Default count recall is **90.24%**. At fixed recall-oriented thresholds, counts avoid **160 misses** at the cost of **45 extra false positives**. These are saved evaluation results.'\n    )\n    image(str(FIGURES / 'structural_errors.png'), width='100%')\n    text(\n        '**Where it still struggles.** Recall is **88.82%** on scaffolds absent from development. Molecules with more than four rings have **26.51%** false negatives. Preserve review opportunities for deferred molecules, especially difficult structures.'\n    )\n    text(\n        '**Healthcare interpretation and next step.** The model provides a low-cost priority score for later synthesis searches. Earlier synthesis triage could reduce avoidable delays before biological testing and help promising drug candidates progress toward new treatments; actual workflow and patient-access benefits need prospective validation. It does not produce a reaction route. Next, inspect planner traces for difficult structures and evaluate changes on newly reserved or external data. Chirality-aware fingerprints and graph representations are potential comparisons.'\n    )\n    text(\n        '**AI assistance and sources.** AI assisted project planning, implementation and writing. The screening policy prioritizes fewer missed candidates. Sources: RAscore (Thakkar et al., 2021), AiZynthFinder (Genheden et al., 2020), RDKit and MD6329 Lecture 2. Data and software attribution are available in THIRD_PARTY_NOTICES.md.'\n    )\n\n\nif __name__ == '__main__':\n    main()\n"
   },
   "hidden_line_numbers": {
     "01_route_found.py": [
-      10,
       12,
-      13,
+      14,
       15,
-      16,
+      17,
       18,
-      19,
+      20,
       21,
-      22,
+      23,
       24,
-      25,
-      28,
-      29,
-      32,
-      33,
-      37,
-      38,
+      26,
+      27,
+      30,
+      31,
+      34,
+      35,
+      39,
       40,
-      41,
-      44,
-      45,
-      48,
-      49,
-      52,
-      53,
-      56,
-      57,
-      60,
-      61,
-      64,
+      42,
+      43,
+      46,
+      47,
+      50,
+      51,
+      54,
+      55,
+      58,
+      59,
+      62,
+      63,
       65,
-      68,
-      69,
-      71,
-      72,
-      75,
-      76,
-      79,
+      66,
       80,
-      83,
+      81,
       84,
-      87,
+      85,
       88,
       91,
       92,
-      93,
       95,
       96,
+      98,
       99,
-      100,
-      102,
-      103,
-      105,
-      106
+      108,
+      109,
+      112,
+      113,
+      116,
+      117,
+      120,
+      121,
+      122,
+      124,
+      125,
+      128,
+      129,
+      131,
+      132,
+      134,
+      135
     ]
   },
   "steps": [
@@ -75,7 +80,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 9,
+          "line_number": 11,
           "function_name": "main",
           "source_line": "def main():"
         }
@@ -87,7 +92,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 11,
+          "line_number": 13,
           "function_name": "main",
           "source_line": "text("
         }
@@ -96,7 +101,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "# Can a small neural network help prioritize synthesis route searches?",
+          "data": "# Can a small neural network help prioritize synthesis route searches in early drug discovery?",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -107,7 +112,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 14,
+          "line_number": 16,
           "function_name": "main",
           "source_line": "text("
         }
@@ -116,7 +121,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Molecular synthesis route screening**  \nCPU-based deep learning study",
+          "data": "**Molecular synthesis route screening for early drug discovery**  \nCPU-based deep learning study",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -127,7 +132,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 17,
+          "line_number": 19,
           "function_name": "main",
           "source_line": "text("
         }
@@ -136,7 +141,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Motivation.** A difficult reaction can delay an entire synthesis route. This study asks an affordable screening question: can molecular structure predict a historical route-search outcome?",
+          "data": "**Healthcare problem.** New medicines start as candidate molecules. Before a promising candidate can enter biological testing, and eventually preclinical and clinical development for patients, chemists must find a practical way to make it. A single difficult reaction can stall that path for weeks.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -147,7 +152,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 20,
+          "line_number": 22,
           "function_name": "main",
           "source_line": "text("
         }
@@ -156,7 +161,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Screening problem.** Running a multistep planner for every molecule costs time. A fast score can prioritize searches, but missing a useful molecule has a cost. Label **1** means the historical AiZynthFinder run found a route; label **0** means it did not under its search conditions.",
+          "data": "**Screening problem.** Computer-aided retrosynthesis planners can search for routes, but running a multistep planner for every candidate costs time. A fast score can decide which candidates to search first, but missing a useful drug candidate has a cost. Label **1** means the historical AiZynthFinder run found a route; label **0** means it did not under its search conditions.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -167,7 +172,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 23,
+          "line_number": 25,
           "function_name": "main",
           "source_line": "text("
         }
@@ -187,7 +192,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 26,
+          "line_number": 28,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'pipeline.png'), width='100%')"
         }
@@ -209,7 +214,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 27,
+          "line_number": 29,
           "function_name": "main",
           "source_line": "text("
         }
@@ -218,7 +223,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Study design.** Use 20,000 development molecules, repeated random and scaffold splits, and three training seeds. Validation selects the configuration and threshold. A separate 19,935-molecule test evaluates the frozen comparison. Four selected states follow the same three validation molecules from structure to decision.",
+          "data": "**Study design.** Use 20,000 ChEMBL-derived, bioactivity-related development molecules, repeated random and scaffold splits, and three training seeds. Validation selects the configuration and threshold. A separate 19,935-molecule test evaluates the frozen comparison. Four selected states follow the same three validation molecules from structure to decision.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -229,7 +234,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 31,
+          "line_number": 33,
           "function_name": "main",
           "source_line": "text("
         }
@@ -249,7 +254,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 34,
+          "line_number": 36,
           "function_name": "main",
           "source_line": "molecules = molecule_state(demo)  # @inspect molecules @stepover"
         }
@@ -318,7 +323,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 35,
+          "line_number": 37,
           "function_name": "main",
           "source_line": "image(str(HERE / 'demo_molecules.png'), width='100%')"
         }
@@ -340,7 +345,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 36,
+          "line_number": 38,
           "function_name": "main",
           "source_line": "text("
         }
@@ -360,7 +365,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 39,
+          "line_number": 41,
           "function_name": "main",
           "source_line": "text("
         }
@@ -380,7 +385,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 43,
+          "line_number": 45,
           "function_name": "main",
           "source_line": "text("
         }
@@ -400,7 +405,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 46,
+          "line_number": 48,
           "function_name": "main",
           "source_line": "x, feature_state = features(demo)  # @inspect feature_state @clear molecules @stepover"
         }
@@ -506,7 +511,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 47,
+          "line_number": 49,
           "function_name": "main",
           "source_line": "text("
         }
@@ -526,7 +531,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 50,
+          "line_number": 52,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'feature_encoding.png'), width='100%')"
         }
@@ -548,7 +553,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 51,
+          "line_number": 53,
           "function_name": "main",
           "source_line": "text("
         }
@@ -568,7 +573,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 54,
+          "line_number": 56,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'representation_comparison.png'), width='100%')"
         }
@@ -590,7 +595,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 55,
+          "line_number": 57,
           "function_name": "main",
           "source_line": "text("
         }
@@ -610,7 +615,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 59,
+          "line_number": 61,
           "function_name": "main",
           "source_line": "text("
         }
@@ -630,221 +635,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 62,
-          "function_name": "main",
-          "source_line": "probabilities, network_state = forward(demo, x)  # @inspect network_state @clear feature_state @stepover"
-        }
-      ],
-      "env": {
-        "network_state": {
-          "type": "dict",
-          "contents": {
-            "seed42_hidden_layers": {
-              "type": "list",
-              "contents": [
-                {
-                  "type": "dict",
-                  "contents": {
-                    "width": {
-                      "type": "int",
-                      "contents": 256
-                    },
-                    "first_molecule_first_6_activations": {
-                      "type": "list",
-                      "contents": [
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.3429
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0626
-                        }
-                      ]
-                    },
-                    "nonzero_units": {
-                      "type": "int",
-                      "contents": 107
-                    }
-                  }
-                },
-                {
-                  "type": "dict",
-                  "contents": {
-                    "width": {
-                      "type": "int",
-                      "contents": 128
-                    },
-                    "first_molecule_first_6_activations": {
-                      "type": "list",
-                      "contents": [
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.1918
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        }
-                      ]
-                    },
-                    "nonzero_units": {
-                      "type": "int",
-                      "contents": 56
-                    }
-                  }
-                },
-                {
-                  "type": "dict",
-                  "contents": {
-                    "width": {
-                      "type": "int",
-                      "contents": 64
-                    },
-                    "first_molecule_first_6_activations": {
-                      "type": "list",
-                      "contents": [
-                        {
-                          "type": "float",
-                          "contents": 0.3569
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.2351
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        },
-                        {
-                          "type": "float",
-                          "contents": 0.0
-                        }
-                      ]
-                    },
-                    "nonzero_units": {
-                      "type": "int",
-                      "contents": 30
-                    }
-                  }
-                }
-              ]
-            },
-            "three_seed_probabilities": {
-              "type": "list",
-              "contents": [
-                {
-                  "type": "list",
-                  "contents": [
-                    {
-                      "type": "float",
-                      "contents": 0.663149
-                    },
-                    {
-                      "type": "float",
-                      "contents": 0.756619
-                    },
-                    {
-                      "type": "float",
-                      "contents": 0.746304
-                    }
-                  ]
-                },
-                {
-                  "type": "list",
-                  "contents": [
-                    {
-                      "type": "float",
-                      "contents": 0.537566
-                    },
-                    {
-                      "type": "float",
-                      "contents": 0.408461
-                    },
-                    {
-                      "type": "float",
-                      "contents": 0.496351
-                    }
-                  ]
-                },
-                {
-                  "type": "list",
-                  "contents": [
-                    {
-                      "type": "float",
-                      "contents": 0.970952
-                    },
-                    {
-                      "type": "float",
-                      "contents": 0.959323
-                    },
-                    {
-                      "type": "float",
-                      "contents": 0.962868
-                    }
-                  ]
-                }
-              ]
-            },
-            "dropout_in_evaluation": {
-              "type": "bool",
-              "contents": false
-            },
-            "training_performed": {
-              "type": "bool",
-              "contents": false
-            }
-          }
-        },
-        "feature_state": null
-      },
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "01_route_found.py",
-          "line_number": 63,
+          "line_number": 64,
           "function_name": "main",
           "source_line": "text("
         }
@@ -853,7 +644,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Core forward-pass operations.** Hidden layers apply affine transformations and ReLU; sigmoid turns the final logit into a probability. Each of three independently trained models receives the same input.\n\n```python\nmodel.eval()\ninputs = torch.from_numpy(x)\nwith torch.no_grad():\n    logits = model(inputs)\n    probability = torch.sigmoid(logits)\n```\n\nReal frozen weights are used, with dropout disabled and no gradient updates.",
+          "data": "**What happens.** We now run the frozen seed-42 network one layer at a time on the 3 \u00d7 1,029 input matrix. Each hidden block is a linear layer followed by ReLU; dropout is inactive in evaluation mode and no gradients are computed. Watch `layer1`, `layer2` and `layer3` appear in the variable panel.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -864,7 +655,416 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 66,
+          "line_number": 67,
+          "function_name": "main",
+          "source_line": "net = demo['models'][0]  # @stepover"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 68,
+          "function_name": "main",
+          "source_line": "inputs = torch.from_numpy(x)  # @clear feature_state"
+        }
+      ],
+      "env": {
+        "feature_state": null
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 69,
+          "function_name": "main",
+          "source_line": "with torch.no_grad():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 70,
+          "function_name": "main",
+          "source_line": "h1 = net[1](net[0](inputs))  # @stepover"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 71,
+          "function_name": "main",
+          "source_line": "layer1 = layer_summary(h1)  # @inspect layer1 @stepover"
+        }
+      ],
+      "env": {
+        "layer1": {
+          "type": "dict",
+          "contents": {
+            "shape": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 3
+                },
+                {
+                  "type": "int",
+                  "contents": 256
+                }
+              ]
+            },
+            "active_units_per_molecule": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 107
+                },
+                {
+                  "type": "int",
+                  "contents": 66
+                },
+                {
+                  "type": "int",
+                  "contents": 145
+                }
+              ]
+            },
+            "first_molecule_first_6": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.3429
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0626
+                }
+              ]
+            }
+          }
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 72,
+          "function_name": "main",
+          "source_line": "h2 = net[4](net[3](h1))  # @stepover"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 73,
+          "function_name": "main",
+          "source_line": "layer2 = layer_summary(h2)  # @inspect layer2 @stepover"
+        }
+      ],
+      "env": {
+        "layer2": {
+          "type": "dict",
+          "contents": {
+            "shape": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 3
+                },
+                {
+                  "type": "int",
+                  "contents": 128
+                }
+              ]
+            },
+            "active_units_per_molecule": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 56
+                },
+                {
+                  "type": "int",
+                  "contents": 42
+                },
+                {
+                  "type": "int",
+                  "contents": 72
+                }
+              ]
+            },
+            "first_molecule_first_6": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.1918
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                }
+              ]
+            }
+          }
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 74,
+          "function_name": "main",
+          "source_line": "h3 = net[7](net[6](h2))  # @stepover"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 75,
+          "function_name": "main",
+          "source_line": "layer3 = layer_summary(h3)  # @inspect layer3 @stepover"
+        }
+      ],
+      "env": {
+        "layer3": {
+          "type": "dict",
+          "contents": {
+            "shape": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 3
+                },
+                {
+                  "type": "int",
+                  "contents": 64
+                }
+              ]
+            },
+            "active_units_per_molecule": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 30
+                },
+                {
+                  "type": "int",
+                  "contents": 33
+                },
+                {
+                  "type": "int",
+                  "contents": 27
+                }
+              ]
+            },
+            "first_molecule_first_6": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "float",
+                  "contents": 0.3569
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.2351
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                },
+                {
+                  "type": "float",
+                  "contents": 0.0
+                }
+              ]
+            }
+          }
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 76,
+          "function_name": "main",
+          "source_line": "logit = net[9](h3)  # @stepover"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 77,
+          "function_name": "main",
+          "source_line": "seed42_logit = logit.squeeze(1).tolist()  # @inspect seed42_logit"
+        }
+      ],
+      "env": {
+        "seed42_logit": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "float",
+              "contents": 0.6773568987846375
+            },
+            {
+              "type": "float",
+              "contents": 0.15054628252983093
+            },
+            {
+              "type": "float",
+              "contents": 3.509336471557617
+            }
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 78,
+          "function_name": "main",
+          "source_line": "seed42_probability = torch.sigmoid(logit).squeeze(1).tolist()  # @inspect seed42_probability"
+        }
+      ],
+      "env": {
+        "seed42_probability": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "float",
+              "contents": 0.6631485223770142
+            },
+            {
+              "type": "float",
+              "contents": 0.5375656485557556
+            },
+            {
+              "type": "float",
+              "contents": 0.9709522724151611
+            }
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 69,
+          "function_name": "main",
+          "source_line": "with torch.no_grad():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 79,
+          "function_name": "main",
+          "source_line": "text("
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "**What changes.** The representation shrinks from **1,029 \u2192 256 \u2192 128 \u2192 64 \u2192 1** values per molecule. ReLU sets negative pre-activations to zero, so `active_units_per_molecule` counts how many hidden units fire for each molecule. The final logit is unbounded; sigmoid maps it into a probability between 0 and 1.",
+          "style": null,
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 82,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'network_activations.png'), width='100%')"
         }
@@ -886,7 +1086,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 67,
+          "line_number": 83,
           "function_name": "main",
           "source_line": "text("
         }
@@ -895,7 +1095,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**What the colors show.** The heatmap contains the first six actual ReLU activations per hidden layer for the first molecule in seed 42. Zero means inactive on this input. These sampled units illustrate computation; they are not a chemical attribution.",
+          "data": "**Repeat for all three seeds.** The same input passes through the seed-43 and seed-44 networks, giving one probability per molecule per model.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -906,7 +1106,115 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 70,
+          "line_number": 86,
+          "function_name": "main",
+          "source_line": "with torch.no_grad():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 87,
+          "function_name": "main",
+          "source_line": "probabilities = np.stack([torch.sigmoid(model(inputs)).squeeze(1).numpy().astype(np.float64) for model in demo['models']], axis=1)  # @stepover"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 86,
+          "function_name": "main",
+          "source_line": "with torch.no_grad():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 89,
+          "function_name": "main",
+          "source_line": "three_seed_probabilities = probabilities.round(4).tolist()  # @inspect three_seed_probabilities @clear layer1 layer2 layer3"
+        }
+      ],
+      "env": {
+        "three_seed_probabilities": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "float",
+                  "contents": 0.6631
+                },
+                {
+                  "type": "float",
+                  "contents": 0.7566
+                },
+                {
+                  "type": "float",
+                  "contents": 0.7463
+                }
+              ]
+            },
+            {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "float",
+                  "contents": 0.5376
+                },
+                {
+                  "type": "float",
+                  "contents": 0.4085
+                },
+                {
+                  "type": "float",
+                  "contents": 0.4964
+                }
+              ]
+            },
+            {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "float",
+                  "contents": 0.971
+                },
+                {
+                  "type": "float",
+                  "contents": 0.9593
+                },
+                {
+                  "type": "float",
+                  "contents": 0.9629
+                }
+              ]
+            }
+          ]
+        },
+        "layer1": null,
+        "layer2": null,
+        "layer3": null
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 90,
           "function_name": "main",
           "source_line": "text("
         }
@@ -915,7 +1223,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Why this network?** Nonlinear layers combine local patterns and global properties. The smaller network saves about 77.5% of parameters but loses development AUROC. Early stopping and dropout control fitting. Final models restore epoch 2, where validation loss is lowest, despite later falls in training loss.",
+          "data": "**Why it matters.** Nonlinear layers combine local substructure patterns with global properties such as size and ring count. The smaller network saves about 77.5% of parameters but loses development AUROC. Final models restore epoch 2, where validation loss is lowest, despite later falls in training loss. The heatmap shows sampled units, not a chemical attribution.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -926,7 +1234,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 74,
+          "line_number": 94,
           "function_name": "main",
           "source_line": "text("
         }
@@ -946,9 +1254,162 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 77,
+          "line_number": 97,
           "function_name": "main",
-          "source_line": "decisions = decision(demo, probabilities)  # @inspect decisions @clear network_state @stepover"
+          "source_line": "text("
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "**What happens.** The three seed probabilities are averaged, then compared with a threshold frozen on validation data before testing.",
+          "style": null,
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 100,
+          "function_name": "main",
+          "source_line": "threshold = demo['threshold']  # @inspect threshold"
+        }
+      ],
+      "env": {
+        "threshold": {
+          "type": "float",
+          "contents": 0.5844208399454752
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 101,
+          "function_name": "main",
+          "source_line": "mean_probability = probabilities.mean(axis=1)"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 102,
+          "function_name": "main",
+          "source_line": "ensemble_mean = mean_probability.round(4).tolist()  # @inspect ensemble_mean @clear seed42_logit seed42_probability"
+        }
+      ],
+      "env": {
+        "ensemble_mean": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "float",
+              "contents": 0.722
+            },
+            {
+              "type": "float",
+              "contents": 0.4808
+            },
+            {
+              "type": "float",
+              "contents": 0.9644
+            }
+          ]
+        },
+        "seed42_logit": null,
+        "seed42_probability": null
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 103,
+          "function_name": "main",
+          "source_line": "positive = mean_probability >= threshold"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 104,
+          "function_name": "main",
+          "source_line": "predicted_label = positive.astype(int).tolist()  # @inspect predicted_label"
+        }
+      ],
+      "env": {
+        "predicted_label": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "int",
+              "contents": 1
+            },
+            {
+              "type": "int",
+              "contents": 0
+            },
+            {
+              "type": "int",
+              "contents": 1
+            }
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 105,
+          "function_name": "main",
+          "source_line": "historical_label = [m['historical_label'] for m in molecules]  # @inspect historical_label"
+        }
+      ],
+      "env": {
+        "historical_label": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "int",
+              "contents": 1
+            },
+            {
+              "type": "int",
+              "contents": 0
+            },
+            {
+              "type": "int",
+              "contents": 1
+            }
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "01_route_found.py",
+          "line_number": 106,
+          "function_name": "main",
+          "source_line": "decisions = decision(demo, probabilities)  # @inspect decisions @stepover"
         }
       ],
       "env": {
@@ -1031,8 +1492,7 @@
               }
             }
           ]
-        },
-        "network_state": null
+        }
       },
       "renderings": []
     },
@@ -1040,7 +1500,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 78,
+          "line_number": 107,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1049,7 +1509,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Core decision operations.**\n\n```python\nmean_probability = probabilities.mean(axis=1)\npositive = mean_probability >= threshold\npredicted_label = positive.astype(int)\n```\n\nEqual averaging uses all three fits. The frozen validation threshold, **0.5844208399**, encodes the preference for fewer missed candidates. Equality counts as positive. Expand `decisions` to compare scores, predictions and historical labels.",
+          "data": "**What changes.** Three probabilities per molecule collapse into one ensemble score, and the score becomes a yes/no action: **1** = search this candidate first, **0** = defer it. Compare `predicted_label` with `historical_label`. The `decision` call also checks that these means match the saved validation predictions.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -1060,7 +1520,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 81,
+          "line_number": 110,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'ensemble_decisions.png'), width='100%')"
         }
@@ -1082,7 +1542,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 82,
+          "line_number": 111,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1091,7 +1551,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "**Read the plot.** Small points show each seed; diamonds show their means. A mean to the right of the threshold enters the priority queue. These examples explain the computation, and their means match the saved validation predictions.",
+          "data": "**Why it matters.** Averaging uses all three fits rather than trusting one initialization. The threshold, about **0.5844**, retains at least 90% of validation positives, encoding the preference for fewer missed drug candidates; equality counts as positive.",
           "style": null,
           "external_link": null,
           "internal_link": null
@@ -1102,7 +1562,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 85,
+          "line_number": 114,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'threshold_tradeoff.png'), width='100%')"
         }
@@ -1124,7 +1584,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 86,
+          "line_number": 115,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1144,7 +1604,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 90,
+          "line_number": 119,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1164,7 +1624,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 94,
+          "line_number": 123,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1184,7 +1644,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 97,
+          "line_number": 126,
           "function_name": "main",
           "source_line": "image(str(FIGURES / 'structural_errors.png'), width='100%')"
         }
@@ -1206,7 +1666,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 98,
+          "line_number": 127,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1226,7 +1686,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 101,
+          "line_number": 130,
           "function_name": "main",
           "source_line": "text("
         }
@@ -1246,7 +1706,7 @@
       "stack": [
         {
           "path": "01_route_found.py",
-          "line_number": 104,
+          "line_number": 133,
           "function_name": "main",
           "source_line": "text("
         }

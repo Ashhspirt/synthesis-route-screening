@@ -64,6 +64,10 @@ def forward(demo,x):
     state={'seed42_hidden_layers':layers,'three_seed_probabilities':probs.round(6).tolist(),'dropout_in_evaluation':False,'training_performed':False}
     return probs,state
 
+def layer_summary(h):
+    """Small, inspectable summary of one hidden layer for the presentation."""
+    return {'shape':list(h.shape),'active_units_per_molecule':[int(v) for v in (h>0).sum(dim=1)],'first_molecule_first_6':[round(float(v),4) for v in h[0,:6]]}
+
 def decision(demo,probs):
     means=probs.mean(axis=1)
     np.testing.assert_allclose(means,[float(r['probability']) for r in demo['saved']],rtol=1e-6,atol=1e-7)
