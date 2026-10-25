@@ -99,7 +99,7 @@ def main():
         '**Where it still struggles.** Recall is **88.82%** on scaffolds absent from development. Molecules with more than four rings have **26.51%** false negatives. Preserve review opportunities for deferred molecules, especially difficult structures.'
     )
     text(
-        '**Practical value and next step.** The model provides a low-cost priority score for later synthesis searches. It does not produce a reaction route. Next, inspect planner traces for difficult structures and evaluate changes on newly reserved or external data. Chirality-aware fingerprints and graph representations are potential comparisons.'
+        '**Healthcare interpretation and next step.** The model provides a low-cost priority score for later synthesis searches. Earlier synthesis triage could reduce avoidable delays before biological testing and help promising drug candidates progress toward new treatments; actual workflow and patient-access benefits need prospective validation. It does not produce a reaction route. Next, inspect planner traces for difficult structures and evaluate changes on newly reserved or external data. Chirality-aware fingerprints and graph representations are potential comparisons.'
     )
     text(
         '**AI assistance and sources.** AI assisted project planning, implementation and writing. The screening policy prioritizes fewer missed candidates. Sources: RAscore (Thakkar et al., 2021), AiZynthFinder (Genheden et al., 2020), RDKit and MD6329 Lecture 2. Data and software attribution are available in THIRD_PARTY_NOTICES.md.'
